@@ -1,4 +1,4 @@
-# TodoLab — Equipe ___
+# TodoLab — Equipe 2
 
 > Repositório da disciplina **Gestão e Qualidade de Software (0006960)** — USJT 2026/2
 > Prof. Alexandre Barbosa
