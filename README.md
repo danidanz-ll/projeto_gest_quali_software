@@ -6,8 +6,8 @@
 | | |
 |---|---|
 | **Fábrica de software** | |
-| **Integrantes** | |
-| **Produto publicado** | https://\<usuario>.github.io/\<repositorio>/ |
+| **Integrantes** | Daniel Nardi da Silva, Luiz Felipe Araujo Barnabé, Maria Eduarda Araújo Silva, Daniely Oliveira da Silva |
+| **Produto publicado** | (https://github.com/danidanz-ll/projeto_gest_quali_software) |
 | **Project (board)** | |
 | **Par de QA cruzado** | *(definido a partir da aula 12)* |
 
