@@ -9,7 +9,7 @@
 | **Integrantes** | |
 | **Produto publicado** | https://\<usuario>.github.io/\<repositorio>/ |
 | **Project (board)** | |
-| **Par de QA cruzado** | *(definido a partir da aula 12)* |
+| **Revisão e Homologação** | Prof. Alexandre Barbosa |
 
 ---
 
@@ -62,7 +62,7 @@ O mesmo gate (`lint` + `build`) roda no GitHub Actions em cada `push` e pull req
 
 ## Papéis da fábrica
 
-Os quatro papéis centrais não se acumulam entre si. Com menos de seis integrantes, os dois papéis de apoio podem ser acumulados conforme a regra de composição apresentada em aula.
+As responsabilidades da rodada devem ser distribuídas pela equipe conforme sua composição real, usando os nomes da planilha oficial da UC. Em equipes com quatro integrantes, responsabilidades de apoio podem ser acumuladas; o controle essencial é manter autor, revisor e responsável pela liberação como pessoas distintas quando houver merge.
 
 | Papel | Decisão pela qual responde | Restrição |
 |---|---|---|
@@ -114,7 +114,7 @@ Autor do PR, Code Reviewer e Release/DevOps Manager precisam ser pessoas diferen
 └── package.json
 ```
 
-`tests/` e `e2e/` ainda não existem — chegam a partir da aula 08, quando a esteira liga o próximo portão.
+`tests/` e `e2e/` ainda não existem. Os testes automatizados começam na Aula 06; a estrutura e os comandos serão criados quando houver pré-requisitos reais.
 
 ## A esteira de qualidade
 
@@ -124,12 +124,12 @@ Cada nível é um portão novo no CI, ligado na aula indicada. Marquem ✅ confo
 |---:|---:|---|:---:|
 | 0 | 03 | `lint` + `build` (Quality Gate 0) | ✅ |
 | 1 | 04 | template de PR + 1 aprovação de terceiro | ⬜ |
-| 2 | 08 | testes de aceitação no CI (`test:acceptance`) | ⬜ |
-| 3 | 14 | cobertura mínima de 60% | ⬜ |
-| 4 | 14 | `guard-tests` (separação de poderes) | ⬜ |
-| 5 | 15 | testes E2E com Playwright | ⬜ |
-| 6 | 15 | branch protection na `main` | ⬜ |
-| 7 | 16 | commits convencionais + release | ⬜ |
-| 8 | 16 | resumo de métricas no Pull Request | ⬜ |
+| 2 | 06 | testes de aceitação no CI (`test:acceptance`) | ⬜ |
+| 3 | 10 | cobertura mínima de 60% | ⬜ |
+| 4 | 10 | `guard-tests` (separação de responsabilidades) | ⬜ |
+| 5 | 11 | testes E2E com Playwright | ⬜ |
+| 6 | 11 | branch protection na `main` | ⬜ |
+| 7 | 12 | commits convencionais + release | ⬜ |
+| 8 | 12 | resumo de métricas no Pull Request | ⬜ |
 
 > A equipe assina o que faz merge. "A IA escreveu" não é justificativa técnica.
