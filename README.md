@@ -77,14 +77,14 @@ Autor do PR, Code Reviewer e Release/DevOps Manager precisam ser pessoas diferen
 
 ## Fluxo obrigatório de cada rodada
 
-1. Abram uma Issue (`.github/ISSUE_TEMPLATE/feature.md`) e escrevam critérios verificáveis, no formato Dado / Quando / Então.
-2. Criem uma branch pequena e relacionada à Issue.
-3. Usem o GitHub Copilot no VS Code para gerar a implementação, com o contexto e os critérios já aprovados pela equipe.
+1. Abram uma Issue via formulário guiado (`.github/ISSUE_TEMPLATE/demanda-todolab.yml`) e estabeleçam critérios verificáveis no formato Dado / Quando / Então (BDD).
+2. Criem uma branch pequena e relacionada à Issue (`feature/issue-NN-descricao`).
+3. Usem o GitHub Copilot no VS Code para gerar a implementação, fornecendo o contexto e os critérios já aprovados pela equipe.
 4. Registrem o diálogo com a fábrica em `docs/prompts/ISSUE-NN.md`.
 5. Executem `npm run check` e confiram o `git diff` antes de comitar.
 6. Abram um Pull Request com `Closes #NN` (o template já vem em `.github/pull_request_template.md`).
-7. Aguardem o GitHub Actions e obtenham revisão substantiva de uma pessoa diferente do autor.
-8. Façam merge somente com evidência suficiente, e preencham `docs/diario.md` com o aprendizado da rodada.
+7. Aguardem o GitHub Actions (Quality Gate 0) e obtenham revisão substantiva de uma pessoa diferente do autor.
+8. Façam merge somente com evidência suficiente; a auditoria e governança da squad são avaliadas diretamente pelo histórico nativo da plataforma GitHub (Issues, Commits, Pull Requests e Actions).
 
 ## Regras que não se negociam
 
@@ -104,11 +104,13 @@ Autor do PR, Code Reviewer e Release/DevOps Manager precisam ser pessoas diferen
 ├── scripts/               # dev, lint e build — sem dependências externas
 ├── docs/
 │   ├── prompts/           # diálogo com a fábrica, rodada a rodada (ISSUE-NN.md)
-│   ├── rodizio.md          # quem ocupou qual papel em cada aula
-│   └── diario.md           # uma entrada de aprendizado por aula
+│   ├── qualidade/         # checklists de DoR e inspeção de código
+│   └── rodizio.md         # quem ocupou qual papel em cada aula
 ├── .github/
 │   ├── workflows/quality-gate.yml
-│   ├── ISSUE_TEMPLATE/feature.md
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── demanda-todolab.yml
+│   │   └── defeito-bug.yml
 │   └── pull_request_template.md
 ├── index.html
 └── package.json
