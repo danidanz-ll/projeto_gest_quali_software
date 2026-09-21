@@ -5,9 +5,9 @@
 
 | | |
 |---|---|
-| **Fábrica de software** | |
+| **Fábrica de software** | GitHub Copilot + Equipe 2 |
 | **Integrantes** | Daniel Nardi da Silva, Luiz Felipe Araujo Barnabé, Maria Eduarda Araújo Silva, Daniely Oliveira da Silva |
-| **Produto publicado** | (https://github.com/danidanz-ll/projeto_gest_quali_software) |
+| **Produto publicado** | https://github.com/danidanz-ll/projeto_gest_quali_software |
 | **Project (board)** | |
 | **Par de QA cruzado** | *(definido a partir da aula 12)* |
 
@@ -62,7 +62,7 @@ O mesmo gate (`lint` + `build`) roda no GitHub Actions em cada `push` e pull req
 
 ## Papéis da fábrica
 
-Os quatro papéis centrais não se acumulam entre si. Com menos de seis integrantes, os dois papéis de apoio podem ser acumulados conforme a regra de composição apresentada em aula.
+Os quatro papéis centrais não se acumulam entre si. Com menos de seis integrantes, os dois papéis de apoio podem ser acumulados conforme a regra de composição apresentada em aula. As responsabilidades da rodada devem ser distribuídas pela equipe conforme sua composição real, usando os nomes da planilha oficial da UC.
 
 | Papel | Decisão pela qual responde | Restrição |
 |---|---|---|
@@ -77,14 +77,14 @@ Autor do PR, Code Reviewer e Release/DevOps Manager precisam ser pessoas diferen
 
 ## Fluxo obrigatório de cada rodada
 
-1. Abram uma Issue (`.github/ISSUE_TEMPLATE/feature.md`) e escrevam critérios verificáveis, no formato Dado / Quando / Então.
-2. Criem uma branch pequena e relacionada à Issue.
-3. Usem o GitHub Copilot no VS Code para gerar a implementação, com o contexto e os critérios já aprovados pela equipe.
+1. Abram uma Issue via formulário guiado (`.github/ISSUE_TEMPLATE/demanda-todolab.yml`) e estabeleçam critérios verificáveis no formato Dado / Quando / Então (BDD).
+2. Criem uma branch pequena e relacionada à Issue (`feature/issue-NN-descricao`).
+3. Usem o GitHub Copilot no VS Code para gerar a implementação, fornecendo o contexto e os critérios já aprovados pela equipe.
 4. Registrem o diálogo com a fábrica em `docs/prompts/ISSUE-NN.md`.
 5. Executem `npm run check` e confiram o `git diff` antes de comitar.
 6. Abram um Pull Request com `Closes #NN` (o template já vem em `.github/pull_request_template.md`).
-7. Aguardem o GitHub Actions e obtenham revisão substantiva de uma pessoa diferente do autor.
-8. Façam merge somente com evidência suficiente, e preencham `docs/diario.md` com o aprendizado da rodada.
+7. Aguardem o GitHub Actions (Quality Gate 0) e obtenham revisão substantiva de uma pessoa diferente do autor.
+8. Façam merge somente com evidência suficiente; a auditoria e governança da squad são avaliadas diretamente pelo histórico nativo da plataforma GitHub (Issues, Commits, Pull Requests e Actions).
 
 ## Regras que não se negociam
 
@@ -104,17 +104,20 @@ Autor do PR, Code Reviewer e Release/DevOps Manager precisam ser pessoas diferen
 ├── scripts/               # dev, lint e build — sem dependências externas
 ├── docs/
 │   ├── prompts/           # diálogo com a fábrica, rodada a rodada (ISSUE-NN.md)
-│   ├── rodizio.md          # quem ocupou qual papel em cada aula
-│   └── diario.md           # uma entrada de aprendizado por aula
+│   ├── qualidade/         # checklists de DoR e inspeção de código
+│   ├── rodizio.md         # quem ocupou qual papel em cada aula
+│   └── diario.md          # uma entrada de aprendizado por aula
 ├── .github/
 │   ├── workflows/quality-gate.yml
-│   ├── ISSUE_TEMPLATE/feature.md
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── demanda-todolab.yml
+│   │   └── defeito-bug.yml
 │   └── pull_request_template.md
 ├── index.html
 └── package.json
 ```
 
-`tests/` e `e2e/` ainda não existem — chegam a partir da aula 08, quando a esteira liga o próximo portão.
+`tests/` e `e2e/` ainda não existem. Os testes automatizados começam na Aula 06; a estrutura e os comandos serão criados quando houver pré-requisitos reais.
 
 ## A esteira de qualidade
 
@@ -124,12 +127,12 @@ Cada nível é um portão novo no CI, ligado na aula indicada. Marquem ✅ confo
 |---:|---:|---|:---:|
 | 0 | 03 | `lint` + `build` (Quality Gate 0) | ✅ |
 | 1 | 04 | template de PR + 1 aprovação de terceiro | ⬜ |
-| 2 | 08 | testes de aceitação no CI (`test:acceptance`) | ⬜ |
-| 3 | 14 | cobertura mínima de 60% | ⬜ |
-| 4 | 14 | `guard-tests` (separação de poderes) | ⬜ |
-| 5 | 15 | testes E2E com Playwright | ⬜ |
-| 6 | 15 | branch protection na `main` | ⬜ |
-| 7 | 16 | commits convencionais + release | ⬜ |
-| 8 | 16 | resumo de métricas no Pull Request | ⬜ |
+| 2 | 06 | testes de aceitação no CI (`test:acceptance`) | ⬜ |
+| 3 | 10 | cobertura mínima de 60% | ⬜ |
+| 4 | 10 | `guard-tests` (separação de responsabilidades) | ⬜ |
+| 5 | 11 | testes E2E com Playwright | ⬜ |
+| 6 | 11 | branch protection na `main` | ⬜ |
+| 7 | 12 | commits convencionais + release | ⬜ |
+| 8 | 12 | resumo de métricas no Pull Request | ⬜ |
 
 > A equipe assina o que faz merge. "A IA escreveu" não é justificativa técnica.
