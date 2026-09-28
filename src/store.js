@@ -1,5 +1,11 @@
 const CHAVE = 'todolab:tarefas';
 
+export function filtrarTarefas(tarefas, hash) {
+  if (hash === '#/active') return tarefas.filter((tarefa) => !tarefa.concluida);
+  if (hash === '#/completed') return tarefas.filter((tarefa) => tarefa.concluida);
+  return [...tarefas];
+}
+
 function criarTarefa(titulo) {
   return {
     id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
