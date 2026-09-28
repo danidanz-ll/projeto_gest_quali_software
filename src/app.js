@@ -5,11 +5,24 @@ const form = document.querySelector('#todo-form');
 const input = document.querySelector('#todo-input');
 const list = document.querySelector('#todo-list');
 const emptyState = document.querySelector('#empty-state');
+const clearCompletedButton = document.createElement('button');
+
+clearCompletedButton.type = 'button';
+clearCompletedButton.className = 'clear-completed';
+clearCompletedButton.textContent = 'Limpar concluídas';
+clearCompletedButton.setAttribute('aria-label', 'Limpar tarefas concluídas');
+clearCompletedButton.addEventListener('click', () => {
+  store.removerConcluidas();
+  render();
+});
+
+form.insertAdjacentElement('afterend', clearCompletedButton);
 
 function render() {
   const tarefas = store.listar();
   list.replaceChildren();
   emptyState.hidden = tarefas.length > 0;
+  clearCompletedButton.hidden = !tarefas.some((tarefa) => tarefa.concluida);
 
   for (const tarefa of tarefas) {
     const item = document.createElement('li');
