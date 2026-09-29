@@ -15,7 +15,7 @@ Dado que tenho 2 ou mais tarefas pendentes,
 Quando visualizo o painel,
 Então o contador deve formatar o texto no plural (ex: "2 itens restantes).
 
-- Cenário 2 (Nenhuma tarefa pendente
+- Cenário 2 (Nenhuma tarefa pendente)
 Dado que não tenho nenhuma tarefa pendente na lista (lista vazia),
 Quando visualizo o painel,
 Então o contador deve exibir o texto "0 itens restantes".
