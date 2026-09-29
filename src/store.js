@@ -19,7 +19,13 @@ export class TodoStore {
     if (!this.armazenamento) return [];
     const bruto = this.armazenamento.getItem(CHAVE);
     if (!bruto) return [];
-    return JSON.parse(bruto);
+
+    try {
+      const dados = JSON.parse(bruto);
+      return Array.isArray(dados) ? dados : [];
+    } catch (erro) {
+      return [];
+    }
   }
 
   salvar() {
@@ -113,5 +119,44 @@ export function executarTesteLimpezaDeConcluidas() {
   );
 
   console.log('Teste de limpeza de tarefas concluídas: OK');
+  return true;
+}
+
+export function executarTestePersistenciaConfiavel() {
+  const assert = (condicao, mensagem) => {
+    if (!condicao) {
+      throw new Error(mensagem);
+    }
+  };
+
+  const criarArmazenamento = (valorInicial) => {
+    let dados = valorInicial;
+    return {
+      getItem: () => dados,
+      setItem: (_, proximoValor) => {
+        dados = proximoValor;
+      },
+    };
+  };
+
+  const tarefasPersistidas = [
+    { id: '1', titulo: 'Estudar qualidade', concluida: false, criadaEm: '2024-01-01T00:00:00.000Z' },
+    { id: '2', titulo: 'Revisar checklist', concluida: true, criadaEm: '2024-01-01T00:01:00.000Z' },
+  ];
+
+  const armazenamentoValido = criarArmazenamento(JSON.stringify(tarefasPersistidas));
+  const lojaValida = new TodoStore(armazenamentoValido);
+
+  assert(Array.isArray(lojaValida.listar()), 'Cenário 1: a lista carregada deve ser um array.');
+  assert(lojaValida.listar().length === 2, 'Cenário 1: as tarefas devem permanecer após recarregar a página.');
+  assert(lojaValida.listar()[1].concluida === true, 'Cenário 1: o estado das tarefas deve ser preservado.');
+
+  const armazenamentoCorrompido = criarArmazenamento('{bad json');
+  const lojaCorrompida = new TodoStore(armazenamentoCorrompido);
+
+  assert(Array.isArray(lojaCorrompida.listar()), 'Cenário 2: a aplicação deve continuar com uma lista válida.');
+  assert(lojaCorrompida.listar().length === 0, 'Cenário 2: JSON inválido deve resultar em lista vazia, sem quebrar a aplicação.');
+
+  console.log('Teste de persistência confiável: OK');
   return true;
 }
