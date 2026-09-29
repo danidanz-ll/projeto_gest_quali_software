@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import { filtrarTarefas } from '../src/store.js';
 
 export function testarFiltrosDeTarefas() {
@@ -15,5 +16,4 @@ export function testarFiltrosDeTarefas() {
   assert.deepEqual(tarefas.map((tarefa) => tarefa.concluida), [false, true]);
 }
 
-testarFiltrosDeTarefas();
-console.log('Teste unitário aprovado: filtros, fallback e preservação dos dados.');
+test('filtra tarefas e preserva os dados', testarFiltrosDeTarefas);
