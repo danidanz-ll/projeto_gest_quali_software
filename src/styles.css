@@ -87,6 +87,7 @@ input, button { font: inherit; }
 
 .workbench__footer { color: var(--muted); font-size: .72rem; }
 .workbench__footer p { margin: 0; }
+#pending-count { color: var(--acid); }
 .build-mark { text-transform: uppercase; }
 
 .contract { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start; max-width: 590px; margin: 54px 0 0 auto; }
