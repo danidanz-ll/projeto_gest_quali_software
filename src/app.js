@@ -1,11 +1,17 @@
-import { filtrarTarefas, TodoStore } from './store.js';
+feature/issue-05-Filtros_atividades
+import { filtrarTarefas, formatarPendencias, TodoStore } from './store.js';
+ main
 
 const store = new TodoStore();
 const form = document.querySelector('#todo-form');
 const input = document.querySelector('#todo-input');
 const list = document.querySelector('#todo-list');
 const emptyState = document.querySelector('#empty-state');
+feature/issue-05-Filtros_atividades
 const filters = document.querySelector('#todo-filters');
+=======
+const pendingCount = document.querySelector('#pending-count');
+ main
 
 function render() {
   const todasTarefas = store.listar();
@@ -15,6 +21,7 @@ function render() {
   const tarefas = filtrarTarefas(todasTarefas, rota);
   list.replaceChildren();
   emptyState.hidden = tarefas.length > 0;
+ feature/issue-05-Filtros_atividades
   emptyState.textContent = todasTarefas.length === 0
     ? 'Nenhuma tarefa ainda. Comece com um critério claro.'
     : 'Nenhuma tarefa neste filtro.';
@@ -26,6 +33,9 @@ function render() {
       link.removeAttribute('aria-current');
     }
   }
+=======
+  pendingCount.textContent = formatarPendencias(tarefas);
+ main
 
   for (const tarefa of tarefas) {
     const item = document.createElement('li');
