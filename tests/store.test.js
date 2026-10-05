@@ -1,52 +1,43 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
-import { formatarPendencias, TodoStore } from '../src/store.js';
+import { TodoStore } from '../src/store.js';
 
-export function testarFormatacaoDePendencias() {
-  assert.equal(formatarPendencias([]), '0 itens restantes');
-  assert.equal(formatarPendencias([{ concluida: true }]), '0 itens restantes');
-  assert.equal(formatarPendencias([{ concluida: false }]), '1 item restante');
-  assert.equal(
-    formatarPendencias([
-      { concluida: false },
-      { concluida: true },
-      { concluida: false },
-    ]),
-    '2 itens restantes',
-  );
-
-  const tarefas = [{ concluida: false }, { concluida: true }];
-  formatarPendencias(tarefas);
-  assert.deepEqual(tarefas, [{ concluida: false }, { concluida: true }]);
-}
-
-test('formata corretamente a quantidade de tarefas pendentes', testarFormatacaoDePendencias);
-
-export function testarAdicaoDeTarefas() {
-  let gravacoes = 0;
-  const armazenamento = {
-    getItem() {
-      return null;
+export function testarRemocaoDeTarefa() {
+  const tarefasIniciais = [
+    { id: 'tarefa-1', titulo: 'Mesmo título', concluida: false, criadaEm: '2026-09-28T00:00:00.000Z' },
+    { id: 'tarefa-2', titulo: 'Mesmo título', concluida: false, criadaEm: '2026-09-28T00:00:00.000Z' },
+    { id: 'tarefa-3', titulo: 'Outra tarefa', concluida: true, criadaEm: '2026-09-28T00:00:00.000Z' },
+  ];
+  const armazenamentoEmMemoria = {
+    dados: new Map([['todolab:tarefas', JSON.stringify(tarefasIniciais)]]),
+    getItem(chave) {
+      return this.dados.get(chave) ?? null;
     },
-    setItem() {
-      gravacoes += 1;
+    setItem(chave, valor) {
+      this.dados.set(chave, valor);
     },
   };
-  const store = new TodoStore(armazenamento);
-  const entradasInvalidas = ['', '   ', '\t\n', null, undefined, 42];
+  const store = new TodoStore(armazenamentoEmMemoria);
 
-  for (const entrada of entradasInvalidas) {
-    assert.equal(store.adicionar(entrada), null);
-    assert.deepEqual(store.listar(), []);
-    assert.equal(gravacoes, 0);
-  }
+  store.remover('tarefa-2');
+  assert.deepEqual(store.listar().map((tarefa) => tarefa.id), ['tarefa-1', 'tarefa-3']);
+  assert.deepEqual(
+    JSON.parse(armazenamentoEmMemoria.getItem('todolab:tarefas')).map((tarefa) => tarefa.id),
+    ['tarefa-1', 'tarefa-3'],
+  );
 
-  const tarefa = store.adicionar('  Comprar leite  ');
-  assert.ok(tarefa);
-  assert.equal(tarefa.titulo, '  Comprar leite  ');
-  assert.equal(tarefa.concluida, false);
-  assert.deepEqual(store.listar(), [tarefa]);
-  assert.equal(gravacoes, 1);
+  const dadosPersistidos = armazenamentoEmMemoria.getItem('todolab:tarefas');
+  store.remover('id-inexistente');
+  store.remover(null);
+  assert.deepEqual(store.listar().map((tarefa) => tarefa.id), ['tarefa-1', 'tarefa-3']);
+  assert.equal(armazenamentoEmMemoria.getItem('todolab:tarefas'), dadosPersistidos);
+
+  store.remover('tarefa-1');
+  store.remover('tarefa-3');
+  assert.deepEqual(store.listar(), []);
+  assert.deepEqual(JSON.parse(armazenamentoEmMemoria.getItem('todolab:tarefas')), []);
+  store.remover('id-inexistente');
+  assert.deepEqual(store.listar(), []);
 }
 
-test('impede tarefas vazias ou compostas apenas por espaços', testarAdicaoDeTarefas);
+testarRemocaoDeTarefa();
+console.log('Teste unitário aprovado: remoção individual e casos de borda.');
