@@ -1,28 +1,17 @@
-import { TodoStore } from './store.js';
+import { formatarPendencias, TodoStore } from './store.js';
 
 const store = new TodoStore();
 const form = document.querySelector('#todo-form');
 const input = document.querySelector('#todo-input');
 const list = document.querySelector('#todo-list');
 const emptyState = document.querySelector('#empty-state');
-const clearCompletedButton = document.createElement('button');
-
-clearCompletedButton.type = 'button';
-clearCompletedButton.className = 'clear-completed';
-clearCompletedButton.textContent = 'Limpar concluídas';
-clearCompletedButton.setAttribute('aria-label', 'Limpar tarefas concluídas');
-clearCompletedButton.addEventListener('click', () => {
-  store.removerConcluidas();
-  render();
-});
-
-form.insertAdjacentElement('afterend', clearCompletedButton);
+const pendingCount = document.querySelector('#pending-count');
 
 function render() {
   const tarefas = store.listar();
   list.replaceChildren();
   emptyState.hidden = tarefas.length > 0;
-  clearCompletedButton.hidden = !tarefas.some((tarefa) => tarefa.concluida);
+  pendingCount.textContent = formatarPendencias(tarefas);
 
   for (const tarefa of tarefas) {
     const item = document.createElement('li');

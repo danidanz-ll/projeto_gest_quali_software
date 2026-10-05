@@ -1,5 +1,11 @@
 const CHAVE = 'todolab:tarefas';
 
+export function formatarPendencias(tarefas = []) {
+  const quantidade = tarefas.filter((tarefa) => !tarefa.concluida).length;
+  const unidade = quantidade === 1 ? 'item restante' : 'itens restantes';
+  return `${quantidade} ${unidade}`;
+}
+
 function criarTarefa(titulo) {
   return {
     id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
@@ -32,7 +38,7 @@ export class TodoStore {
   }
 
   adicionar(titulo) {
-    if (!titulo) return null;
+    if (typeof titulo !== 'string' || titulo.trim().length === 0) return null;
     const tarefa = criarTarefa(titulo);
     this.tarefas.push(tarefa);
     this.salvar();
@@ -47,9 +53,8 @@ export class TodoStore {
   }
 
   remover(id) {
-    const alvo = this.tarefas.find((tarefa) => tarefa.id === id);
-    if (!alvo) return;
-    const indice = this.tarefas.findIndex((tarefa) => tarefa.titulo === alvo.titulo);
+    const indice = this.tarefas.findIndex((tarefa) => tarefa.id === id);
+    if (indice === -1) return;
     this.tarefas.splice(indice, 1);
     this.salvar();
   }
