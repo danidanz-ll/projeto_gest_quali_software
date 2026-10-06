@@ -1,4 +1,4 @@
-import { filtrarTarefas, TodoStore } from './store.js';
+import { filtrarTarefas, formatarPendencias, TodoStore } from './store.js';
 
 const store = new TodoStore();
 const form = document.querySelector('#todo-form');
@@ -6,14 +6,20 @@ const input = document.querySelector('#todo-input');
 const list = document.querySelector('#todo-list');
 const emptyState = document.querySelector('#empty-state');
 const filters = document.querySelector('#todo-filters');
+feature/issue-06-alternancia_Global
 const toggleAll = document.querySelector('#toggle-all');
+=======
+const pendingCount = document.querySelector('#pending-count');
+ feature/issue-05-Filtros_atividades
 
 function render() {
   const todasTarefas = store.listar();
   const rota = ['#/active', '#/completed'].includes(window.location.hash)
     ? window.location.hash
     : '#/';
+
   const tarefas = filtrarTarefas(todasTarefas, rota);
+
   list.replaceChildren();
   emptyState.hidden = tarefas.length > 0;
   emptyState.textContent = todasTarefas.length === 0
@@ -31,6 +37,8 @@ function render() {
       link.removeAttribute('aria-current');
     }
   }
+
+  pendingCount.textContent = formatarPendencias(todasTarefas);
 
   for (const tarefa of tarefas) {
     const item = document.createElement('li');
