@@ -6,11 +6,8 @@ const input = document.querySelector('#todo-input');
 const list = document.querySelector('#todo-list');
 const emptyState = document.querySelector('#empty-state');
 const filters = document.querySelector('#todo-filters');
-feature/issue-06-alternancia_Global
 const toggleAll = document.querySelector('#toggle-all');
-=======
 const pendingCount = document.querySelector('#pending-count');
- feature/issue-05-Filtros_atividades
 
 function render() {
   const todasTarefas = store.listar();
