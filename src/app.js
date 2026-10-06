@@ -30,7 +30,7 @@ function render() {
     }
   }
 
-  pendingCount.textContent = formatarPendencias(tarefas);
+  pendingCount.textContent = formatarPendencias(todasTarefas);
 
   for (const tarefa of tarefas) {
     const item = document.createElement('li');
