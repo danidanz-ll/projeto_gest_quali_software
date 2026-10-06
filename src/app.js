@@ -1,17 +1,22 @@
-feature/issue-05-Filtros_atividades
-import { filtrarTarefas, formatarPendencias, TodoStore } from './store.js';
- main
+const CHAVE = 'todolab:tarefas';
 
-const store = new TodoStore();
-const form = document.querySelector('#todo-form');
-const input = document.querySelector('#todo-input');
-const list = document.querySelector('#todo-list');
-const emptyState = document.querySelector('#empty-state');
-feature/issue-05-Filtros_atividades
-const filters = document.querySelector('#todo-filters');
-=======
-const pendingCount = document.querySelector('#pending-count');
- main
+export function filtrarTarefas(tarefas, hash) {
+  if (hash === '#/active') {
+    return tarefas.filter((tarefa) => !tarefa.concluida);
+  }
+
+  if (hash === '#/completed') {
+    return tarefas.filter((tarefa) => tarefa.concluida);
+  }
+
+  return [...tarefas];
+}
+
+export function formatarPendencias(tarefas = []) {
+  const quantidade = tarefas.filter((tarefa) => !tarefa.concluida).length;
+  const unidade = quantidade === 1 ? 'item restante' : 'itens restantes';
+  return `${quantidade} ${unidade}`;
+}
 
 function render() {
   const todasTarefas = store.listar();
