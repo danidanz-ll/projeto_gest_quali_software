@@ -1,16 +1,21 @@
 const CHAVE = 'todolab:tarefas';
 
- feature/issue-05-Filtros_atividades
 export function filtrarTarefas(tarefas, hash) {
-  if (hash === '#/active') return tarefas.filter((tarefa) => !tarefa.concluida);
-  if (hash === '#/completed') return tarefas.filter((tarefa) => tarefa.concluida);
+  if (hash === '#/active') {
+    return tarefas.filter((tarefa) => !tarefa.concluida);
+  }
+
+  if (hash === '#/completed') {
+    return tarefas.filter((tarefa) => tarefa.concluida);
+  }
+
   return [...tarefas];
-=======
+}
+
 export function formatarPendencias(tarefas = []) {
   const quantidade = tarefas.filter((tarefa) => !tarefa.concluida).length;
   const unidade = quantidade === 1 ? 'item restante' : 'itens restantes';
   return `${quantidade} ${unidade}`;
- main
 }
 
 function criarTarefa(titulo) {
