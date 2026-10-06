@@ -18,7 +18,6 @@ function render() {
 
   list.replaceChildren();
   emptyState.hidden = tarefas.length > 0;
-
   emptyState.textContent = todasTarefas.length === 0
     ? 'Nenhuma tarefa ainda. Comece com um critério claro.'
     : 'Nenhuma tarefa neste filtro.';
@@ -35,30 +34,21 @@ function render() {
 
   for (const tarefa of tarefas) {
     const item = document.createElement('li');
+    item.className = `todo ${tarefa.concluida ? 'todo--done' : ''}`;
+    item.dataset.id = tarefa.id;
+
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = tarefa.concluida;
+    checkbox.setAttribute('aria-label', `Marcar ${tarefa.titulo} como concluída`);
+    checkbox.addEventListener('change', () => {
+      store.alternar(tarefa.id);
+      render();
+    });
 
-    const label = document.createElement('label');
-    label.textContent = tarefa.titulo;
+    const title = document.createElement('span');
+    title.textContent = tarefa.titulo;
 
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = 'Excluir';
-
-    item.append(checkbox, label, button);
-    list.append(item);
-  }
-}
-
-window.addEventListener('hashchange', render);
-
-form.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const tarefa = store.adicionar(input.value);
-  input.value = '';
-  render();
-});
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'remove';
