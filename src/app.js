@@ -6,6 +6,7 @@ const input = document.querySelector('#todo-input');
 const list = document.querySelector('#todo-list');
 const emptyState = document.querySelector('#empty-state');
 const filters = document.querySelector('#todo-filters');
+const toggleAll = document.querySelector('#toggle-all');
 const pendingCount = document.querySelector('#pending-count');
 
 function render() {
@@ -21,6 +22,10 @@ function render() {
   emptyState.textContent = todasTarefas.length === 0
     ? 'Nenhuma tarefa ainda. Comece com um critério claro.'
     : 'Nenhuma tarefa neste filtro.';
+  toggleAll.disabled = todasTarefas.length === 0;
+  toggleAll.textContent = todasTarefas.length > 0 && todasTarefas.every((tarefa) => tarefa.concluida)
+    ? 'Reabrir todas'
+    : 'Concluir todas';
 
   for (const link of filters.querySelectorAll('a')) {
     if (link.hash === rota) {
@@ -65,6 +70,11 @@ function render() {
 }
 
 window.addEventListener('hashchange', render);
+
+toggleAll.addEventListener('click', () => {
+  store.alternarTodas();
+  render();
+});
 
 form.addEventListener('submit', (event) => {
   event.preventDefault();

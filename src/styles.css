@@ -77,6 +77,11 @@ input, button { font: inherit; }
 .composer button { padding: 0 24px; color: #101210; background: var(--acid); border: 1px solid var(--acid); cursor: pointer; font-weight: 500; }
 .composer button:hover { background: var(--ink); border-color: var(--ink); }
 
+.bulk-actions { display: flex; justify-content: flex-end; padding: 12px 26px; border-bottom: 1px solid var(--line); }
+.bulk-actions button { padding: 8px 12px; color: var(--acid); background: transparent; border: 1px solid var(--line); cursor: pointer; font-size: .72rem; text-transform: uppercase; }
+.bulk-actions button:hover:not(:disabled) { border-color: var(--acid); }
+.bulk-actions button:disabled { color: var(--muted); cursor: not-allowed; opacity: .6; }
+
 .todo-filters { display: flex; gap: 8px; padding: 0 26px 16px; border-bottom: 1px solid var(--line); }
 .todo-filters a { padding: 8px 12px; color: var(--muted); font-size: .75rem; text-decoration: none; }
 .todo-filters a:hover, .todo-filters a[aria-current="page"] { color: var(--acid); }

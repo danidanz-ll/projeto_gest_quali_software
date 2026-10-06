@@ -64,6 +64,15 @@ export class TodoStore {
     this.salvar();
   }
 
+  alternarTodas() {
+    if (this.tarefas.length === 0) return;
+    const concluir = this.tarefas.some((tarefa) => !tarefa.concluida);
+    for (const tarefa of this.tarefas) {
+      tarefa.concluida = concluir;
+    }
+    this.salvar();
+  }
+
   remover(id) {
     const indice = this.tarefas.findIndex((tarefa) => tarefa.id === id);
     if (indice === -1) return;
