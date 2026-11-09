@@ -48,6 +48,9 @@ function render() {
 
     const title = document.createElement('span');
     title.textContent = tarefa.titulo;
+    title.addEventListener('dblclick', () => {
+      ativarEdicao(item, tarefa.id, title);
+    });
 
     const remove = document.createElement('button');
     remove.type = 'button';
@@ -62,6 +65,65 @@ function render() {
     item.append(checkbox, title, remove);
     list.append(item);
   }
+}
+
+function ativarEdicao(item, id, titleElement) {
+  const tituloOriginal = titleElement.textContent;
+  const inputEdicao = document.createElement('input');
+  inputEdicao.type = 'text';
+  inputEdicao.value = tituloOriginal;
+  inputEdicao.className = 'todo-edit';
+  inputEdicao.setAttribute('aria-label', `Editar tarefa ${tituloOriginal}`);
+  inputEdicao.setAttribute('maxlength', '200');
+
+  let finalizado = false;
+
+  const confirmarEdicao = (cancelar = false) => {
+    if (finalizado) return;
+    finalizado = true;
+
+    if (cancelar) {
+      titleElement.textContent = tituloOriginal;
+      item.replaceChild(titleElement, inputEdicao);
+      return;
+    }
+
+    const valor = inputEdicao.value.trim();
+    if (valor.length === 0) {
+      titleElement.textContent = tituloOriginal;
+      item.replaceChild(titleElement, inputEdicao);
+      return;
+    }
+
+    const atualizado = store.atualizarTitulo(id, valor);
+    titleElement.textContent = atualizado ? valor : tituloOriginal;
+    item.replaceChild(titleElement, inputEdicao);
+
+    if (atualizado) {
+      render();
+    }
+  };
+
+  item.replaceChild(inputEdicao, titleElement);
+  inputEdicao.focus();
+  inputEdicao.select();
+
+  inputEdicao.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      confirmarEdicao(false);
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      confirmarEdicao(true);
+    }
+  });
+
+  inputEdicao.addEventListener('blur', () => {
+    confirmarEdicao(false);
+  }, { once: true });
 }
 
 window.addEventListener('hashchange', render);

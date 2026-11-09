@@ -70,6 +70,20 @@ export class TodoStore {
     this.salvar();
   }
 
+  atualizarTitulo(id, titulo) {
+    if (typeof id !== 'string' || id.length === 0) return false;
+    const tarefa = this.tarefas.find((item) => item.id === id);
+    if (!tarefa) return false;
+
+    const tituloAtualizado = typeof titulo === 'string' ? titulo.trim() : '';
+    if (tituloAtualizado.length === 0) return false;
+    if (tituloAtualizado === tarefa.titulo) return true;
+
+    tarefa.titulo = tituloAtualizado;
+    this.salvar();
+    return true;
+  }
+
   remover(id) {
     const indice = this.tarefas.findIndex((tarefa) => tarefa.id === id);
     if (indice === -1) return;
