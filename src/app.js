@@ -1,28 +1,36 @@
-import { TodoStore } from './store.js';
+import { filtrarTarefas, formatarPendencias, TodoStore } from './store.js';
 
 const store = new TodoStore();
 const form = document.querySelector('#todo-form');
 const input = document.querySelector('#todo-input');
 const list = document.querySelector('#todo-list');
 const emptyState = document.querySelector('#empty-state');
-const clearCompletedButton = document.createElement('button');
-
-clearCompletedButton.type = 'button';
-clearCompletedButton.className = 'clear-completed';
-clearCompletedButton.textContent = 'Limpar concluídas';
-clearCompletedButton.setAttribute('aria-label', 'Limpar tarefas concluídas');
-clearCompletedButton.addEventListener('click', () => {
-  store.removerConcluidas();
-  render();
-});
-
-form.insertAdjacentElement('afterend', clearCompletedButton);
+const filters = document.querySelector('#todo-filters');
+const pendingCount = document.querySelector('#pending-count');
 
 function render() {
-  const tarefas = store.listar();
+  const todasTarefas = store.listar();
+  const rota = ['#/active', '#/completed'].includes(window.location.hash)
+    ? window.location.hash
+    : '#/';
+
+  const tarefas = filtrarTarefas(todasTarefas, rota);
+
   list.replaceChildren();
   emptyState.hidden = tarefas.length > 0;
-  clearCompletedButton.hidden = !tarefas.some((tarefa) => tarefa.concluida);
+  emptyState.textContent = todasTarefas.length === 0
+    ? 'Nenhuma tarefa ainda. Comece com um critério claro.'
+    : 'Nenhuma tarefa neste filtro.';
+
+  for (const link of filters.querySelectorAll('a')) {
+    if (link.hash === rota) {
+      link.setAttribute('aria-current', 'page');
+    } else {
+      link.removeAttribute('aria-current');
+    }
+  }
+
+  pendingCount.textContent = formatarPendencias(todasTarefas);
 
   for (const tarefa of tarefas) {
     const item = document.createElement('li');
@@ -55,6 +63,8 @@ function render() {
     list.append(item);
   }
 }
+
+window.addEventListener('hashchange', render);
 
 form.addEventListener('submit', (event) => {
   event.preventDefault();

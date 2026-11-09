@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node tests/filtros.test.js",
     "dev": "node scripts/dev.mjs",
     "lint": "node scripts/lint.mjs",
     "build": "node scripts/build.mjs",
