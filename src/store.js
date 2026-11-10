@@ -70,6 +70,16 @@ export class TodoStore {
     this.salvar();
   }
 
+  alternarTodas() {
+    if (this.tarefas.length === 0) return;
+
+    const concluirTodas = this.tarefas.some((tarefa) => !tarefa.concluida);
+    for (const tarefa of this.tarefas) {
+      tarefa.concluida = concluirTodas;
+    }
+    this.salvar();
+  }
+
   atualizarTitulo(id, titulo) {
     if (typeof id !== 'string' || id.length === 0) return false;
     const tarefa = this.tarefas.find((item) => item.id === id);
