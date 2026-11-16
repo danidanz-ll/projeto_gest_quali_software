@@ -1,6 +1,10 @@
 import { filtrarTarefas, formatarPendencias, TodoStore } from './store.js';
+import { FocusStore } from './focus-store.js';
+import { PomodoroTimer } from './pomodoro.js';
 
 const store = new TodoStore();
+const focusStore = new FocusStore();
+const pomodoro = new PomodoroTimer({ session: focusStore.carregar() });
 const form = document.querySelector('#todo-form');
 const input = document.querySelector('#todo-input');
 const list = document.querySelector('#todo-list');
@@ -8,6 +12,57 @@ const emptyState = document.querySelector('#empty-state');
 const filters = document.querySelector('#todo-filters');
 const toggleAll = document.querySelector('#toggle-all');
 const pendingCount = document.querySelector('#pending-count');
+const focusTimer = document.querySelector('#focus-timer');
+const focusStatus = document.querySelector('#focus-status');
+const focusStart = document.querySelector('#focus-start');
+const focusPause = document.querySelector('#focus-pause');
+const focusResume = document.querySelector('#focus-resume');
+const focusReset = document.querySelector('#focus-reset');
+
+const rotulosEstadoFoco = {
+  idle: 'Pronto para focar',
+  running: 'Sessão em andamento',
+  paused: 'Sessão pausada',
+  completed: 'Sessão finalizada',
+};
+
+let estadoFocoAnterior = null;
+
+function formatarTempo(ms) {
+  const segundos = Math.ceil(ms / 1000);
+  const minutos = Math.floor(segundos / 60);
+  const segundosRestantes = segundos % 60;
+  return `${String(minutos).padStart(2, '0')}:${String(segundosRestantes).padStart(2, '0')}`;
+}
+
+function renderizarFoco() {
+  const sessao = pomodoro.obterEstado();
+  focusTimer.textContent = formatarTempo(sessao.remainingMs);
+  focusTimer.setAttribute('aria-label', `Tempo restante: ${focusTimer.textContent}`);
+  focusStatus.textContent = rotulosEstadoFoco[sessao.status];
+  focusStart.disabled = sessao.status !== 'idle';
+  focusPause.disabled = sessao.status !== 'running';
+  focusResume.disabled = sessao.status !== 'paused';
+
+  if (sessao.status === 'completed' && estadoFocoAnterior !== 'completed') {
+    focusStore.salvar(sessao);
+  }
+  estadoFocoAnterior = sessao.status;
+}
+
+function executarAcaoFoco(acao) {
+  if (pomodoro[acao]()) {
+    focusStore.salvar(pomodoro.obterEstado());
+  }
+  renderizarFoco();
+}
+
+focusStart.addEventListener('click', () => executarAcaoFoco('iniciar'));
+focusPause.addEventListener('click', () => executarAcaoFoco('pausar'));
+focusResume.addEventListener('click', () => executarAcaoFoco('retomar'));
+focusReset.addEventListener('click', () => executarAcaoFoco('reiniciar'));
+document.addEventListener('visibilitychange', renderizarFoco);
+setInterval(renderizarFoco, 1000);
 
 function render() {
   const todasTarefas = store.listar();
@@ -145,6 +200,7 @@ form.addEventListener('submit', (event) => {
   input.value = '';
   input.focus();
   render();
+  renderizarFoco();
 });
 
 render();
