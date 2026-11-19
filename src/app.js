@@ -1,10 +1,16 @@
 import { filtrarTarefas, formatarPendencias, TodoStore } from './store.js';
 import { FocusStore } from './focus-store.js';
+import { limparTarefaInexistente } from './focus-session.js';
 import { PomodoroTimer } from './pomodoro.js';
 
 const store = new TodoStore();
 const focusStore = new FocusStore();
-const pomodoro = new PomodoroTimer({ session: focusStore.carregar() });
+const sessaoPersistida = focusStore.carregar();
+const sessaoRecuperada = limparTarefaInexistente(sessaoPersistida, store.listar());
+if (sessaoRecuperada !== sessaoPersistida) {
+  focusStore.salvar(sessaoRecuperada);
+}
+const pomodoro = new PomodoroTimer({ session: sessaoRecuperada });
 const form = document.querySelector('#todo-form');
 const input = document.querySelector('#todo-input');
 const list = document.querySelector('#todo-list');
@@ -14,10 +20,13 @@ const toggleAll = document.querySelector('#toggle-all');
 const pendingCount = document.querySelector('#pending-count');
 const focusTimer = document.querySelector('#focus-timer');
 const focusStatus = document.querySelector('#focus-status');
+const focusTaskSelect = document.querySelector('#focus-task-select');
+const focusMessage = document.querySelector('#focus-message');
 const focusStart = document.querySelector('#focus-start');
 const focusPause = document.querySelector('#focus-pause');
 const focusResume = document.querySelector('#focus-resume');
 const focusReset = document.querySelector('#focus-reset');
+const clearCompleted = document.querySelector('#clear-completed');
 
 const rotulosEstadoFoco = {
   idle: 'Pronto para focar',
@@ -40,6 +49,7 @@ function renderizarFoco() {
   focusTimer.textContent = formatarTempo(sessao.remainingMs);
   focusTimer.setAttribute('aria-label', `Tempo restante: ${focusTimer.textContent}`);
   focusStatus.textContent = rotulosEstadoFoco[sessao.status];
+  focusTaskSelect.disabled = sessao.type !== 'focus' || sessao.status !== 'idle';
   focusStart.disabled = sessao.status !== 'idle';
   focusPause.disabled = sessao.status !== 'running';
   focusResume.disabled = sessao.status !== 'paused';
@@ -48,6 +58,44 @@ function renderizarFoco() {
     focusStore.salvar(sessao);
   }
   estadoFocoAnterior = sessao.status;
+}
+
+function atualizarOpcoesTarefas(tarefas) {
+  const sessao = pomodoro.obterEstado();
+  focusTaskSelect.replaceChildren();
+
+  const semTarefa = document.createElement('option');
+  semTarefa.value = '';
+  semTarefa.textContent = 'Sem tarefa';
+  focusTaskSelect.append(semTarefa);
+
+  for (const tarefa of tarefas) {
+    const option = document.createElement('option');
+    option.value = tarefa.id;
+    option.textContent = tarefa.titulo;
+    focusTaskSelect.append(option);
+  }
+
+  focusTaskSelect.value = sessao.taskId ?? '';
+}
+
+function mostrarMensagemFoco(mensagem) {
+  focusMessage.textContent = mensagem;
+  focusMessage.hidden = mensagem.length === 0;
+}
+
+function desassociarTarefaAntesDeRemover(taskId) {
+  const sessao = pomodoro.obterEstado();
+  if (sessao.taskId !== taskId) return true;
+
+  if (sessao.status !== 'idle' || !pomodoro.desassociarTarefa()) {
+    mostrarMensagemFoco('Não é possível remover a tarefa associada enquanto a sessão não estiver parada.');
+    return false;
+  }
+
+  focusStore.salvar(pomodoro.obterEstado());
+  renderizarFoco();
+  return true;
 }
 
 function executarAcaoFoco(acao) {
@@ -61,6 +109,33 @@ focusStart.addEventListener('click', () => executarAcaoFoco('iniciar'));
 focusPause.addEventListener('click', () => executarAcaoFoco('pausar'));
 focusResume.addEventListener('click', () => executarAcaoFoco('retomar'));
 focusReset.addEventListener('click', () => executarAcaoFoco('reiniciar'));
+focusTaskSelect.addEventListener('change', () => {
+  const taskId = focusTaskSelect.value;
+  const sessao = pomodoro.obterEstado();
+  let associacaoAtualizada = false;
+
+  if (sessao.type !== 'focus' || sessao.status !== 'idle') {
+    mostrarMensagemFoco('A tarefa só pode ser alterada em uma sessão de foco parada.');
+  } else if (taskId.length === 0) {
+    associacaoAtualizada = pomodoro.desassociarTarefa();
+  } else if (store.listar().some((tarefa) => tarefa.id === taskId)) {
+    associacaoAtualizada = pomodoro.associarTarefa(taskId);
+  } else {
+    mostrarMensagemFoco('A tarefa selecionada não existe mais.');
+  }
+
+  if (associacaoAtualizada) {
+    mostrarMensagemFoco('');
+    focusStore.salvar(pomodoro.obterEstado());
+  } else {
+    const estadoAtual = pomodoro.obterEstado();
+    focusTaskSelect.value = estadoAtual.taskId ?? '';
+    if (focusMessage.hidden) {
+      mostrarMensagemFoco('Não foi possível atualizar a tarefa associada.');
+    }
+  }
+  renderizarFoco();
+});
 document.addEventListener('visibilitychange', renderizarFoco);
 setInterval(renderizarFoco, 1000);
 
@@ -81,6 +156,8 @@ function render() {
   toggleAll.textContent = todasTarefas.length > 0 && todasTarefas.every((tarefa) => tarefa.concluida)
     ? 'Reabrir todas'
     : 'Concluir todas';
+  clearCompleted.disabled = !todasTarefas.some((tarefa) => tarefa.concluida);
+  atualizarOpcoesTarefas(todasTarefas);
 
   for (const link of filters.querySelectorAll('a')) {
     if (link.hash === rota) {
@@ -118,8 +195,11 @@ function render() {
     remove.textContent = 'Remover';
     remove.setAttribute('aria-label', `Remover ${tarefa.titulo}`);
     remove.addEventListener('click', () => {
+      if (!desassociarTarefaAntesDeRemover(tarefa.id)) return;
+      mostrarMensagemFoco('');
       store.remover(tarefa.id);
       render();
+      renderizarFoco();
     });
 
     item.append(checkbox, title, remove);
@@ -190,6 +270,18 @@ window.addEventListener('hashchange', render);
 
 toggleAll.addEventListener('click', () => {
   store.alternarTodas();
+  render();
+});
+
+clearCompleted.addEventListener('click', () => {
+  const tarefasConcluidas = store.listar().filter((tarefa) => tarefa.concluida);
+  const sessao = pomodoro.obterEstado();
+  if (sessao.taskId && tarefasConcluidas.some((tarefa) => tarefa.id === sessao.taskId)) {
+    if (!desassociarTarefaAntesDeRemover(sessao.taskId)) return;
+  }
+
+  mostrarMensagemFoco('');
+  store.removerConcluidas();
   render();
 });
 

@@ -81,11 +81,16 @@ h1 span { color: var(--acid); font-style: italic; }
 .focus-panel__heading h2 { margin: 0; font-family: 'Bodoni MT', Didot, Georgia, serif; font-size: 2rem; }
 .focus-status { margin: 0; color: var(--muted); font-size: .72rem; text-align: right; text-transform: uppercase; }
 .focus-timer { margin: 24px 0; color: var(--acid); font-size: clamp(3.5rem, 11vw, 6rem); font-variant-numeric: tabular-nums; letter-spacing: -.08em; line-height: 1; text-align: center; }
+.focus-task { display: grid; gap: 8px; max-width: 420px; margin: 0 auto 20px; color: var(--muted); font-size: .72rem; text-transform: uppercase; }
+.focus-task select { width: 100%; padding: 12px; color: var(--ink); background: #0f110f; border: 1px solid var(--line); }
+.focus-task select:focus { border-color: var(--acid); outline: 2px solid transparent; box-shadow: 0 0 0 1px var(--acid); }
+.focus-task select:disabled { color: var(--muted); cursor: not-allowed; opacity: .7; }
 .focus-controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
 .focus-controls button { min-width: 112px; padding: 12px 16px; color: var(--acid); background: transparent; border: 1px solid var(--line); cursor: pointer; font-size: .72rem; text-transform: uppercase; }
 .focus-controls button:first-child { color: #101210; background: var(--acid); border-color: var(--acid); }
 .focus-controls button:hover:not(:disabled) { color: #101210; background: var(--ink); border-color: var(--ink); }
 .focus-controls button:disabled { color: var(--muted); cursor: not-allowed; opacity: .5; }
+.focus-message { margin: 16px 0 0; color: var(--orange); font-size: .78rem; text-align: center; }
 
 .composer { display: grid; grid-template-columns: 1fr auto; padding: 26px; border-bottom: 1px solid var(--line); }
 input, button { font: inherit; }
@@ -94,7 +99,7 @@ input, button { font: inherit; }
 .composer button { padding: 0 24px; color: #101210; background: var(--acid); border: 1px solid var(--acid); cursor: pointer; font-weight: 500; }
 .composer button:hover { background: var(--ink); border-color: var(--ink); }
 
-.bulk-actions { display: flex; justify-content: flex-end; padding: 12px 26px; border-bottom: 1px solid var(--line); }
+.bulk-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 12px 26px; border-bottom: 1px solid var(--line); }
 .bulk-actions button { padding: 8px 12px; color: var(--acid); background: transparent; border: 1px solid var(--line); cursor: pointer; font-size: .72rem; text-transform: uppercase; }
 .bulk-actions button:hover:not(:disabled) { border-color: var(--acid); }
 .bulk-actions button:disabled { color: var(--muted); cursor: not-allowed; opacity: .6; }
