@@ -9,6 +9,8 @@ test('inicia parado com duração padrão e respeita as transições de estado',
   const timer = new PomodoroTimer({ clock: () => agora });
 
   assert.deepEqual(timer.obterEstado(), {
+    type: 'focus',
+    taskId: null,
     status: 'idle',
     durationMs: DURACAO_PADRAO_MS,
     remainingMs: DURACAO_PADRAO_MS,
@@ -65,6 +67,8 @@ test('reinicia sessão em execução ou pausada para o tempo configurado', () =>
   agora = 2500;
   timer.reiniciar();
   assert.deepEqual(timer.obterEstado(), {
+    type: 'focus',
+    taskId: null,
     status: 'idle',
     durationMs: 10_000,
     remainingMs: 10_000,
@@ -96,6 +100,8 @@ test('finaliza automaticamente quando o horário previsto para término chega', 
   assert.equal(timer.obterEstado().remainingMs, 1);
   agora = 2100;
   assert.deepEqual(timer.obterEstado(), {
+    type: 'focus',
+    taskId: null,
     status: 'completed',
     durationMs: 2000,
     remainingMs: 0,
@@ -152,4 +158,129 @@ test('persiste a sessão em uma chave independente das tarefas', () => {
 
   assert.deepEqual(focusStore.carregar(), sessao);
   assert.equal(dados.get('todolab:tarefas'), '[{"id":"tarefa-1"}]');
+});
+
+test('associa e desassocia tarefas somente em sessões de foco idle', () => {
+  const timer = new PomodoroTimer();
+
+  assert.equal(timer.associarTarefa('tarefa-1'), true);
+  assert.equal(timer.obterEstado().taskId, 'tarefa-1');
+  assert.equal(timer.desassociarTarefa(), true);
+  assert.equal(timer.obterEstado().taskId, null);
+
+  for (const taskId of [null, undefined, '', '   ', 42]) {
+    assert.equal(timer.associarTarefa(taskId), false);
+  }
+  assert.equal(timer.obterEstado().taskId, null);
+
+  timer.associarTarefa('tarefa-1');
+  timer.iniciar();
+  assert.equal(timer.associarTarefa('tarefa-2'), false);
+  assert.equal(timer.desassociarTarefa(), false);
+  assert.equal(timer.obterEstado().taskId, 'tarefa-1');
+});
+
+test('mantém os metadados da sessão ao iniciar, pausar, retomar e reiniciar', () => {
+  const timer = new PomodoroTimer();
+
+  timer.associarTarefa('tarefa-1');
+  timer.iniciar();
+  assert.deepEqual(
+    { type: timer.obterEstado().type, taskId: timer.obterEstado().taskId },
+    { type: 'focus', taskId: 'tarefa-1' },
+  );
+  timer.pausar();
+  timer.retomar();
+  timer.reiniciar();
+
+  assert.deepEqual(timer.obterEstado(), {
+    type: 'focus',
+    taskId: 'tarefa-1',
+    status: 'idle',
+    durationMs: DURACAO_PADRAO_MS,
+    remainingMs: DURACAO_PADRAO_MS,
+    endsAt: null,
+    completedAt: null,
+  });
+});
+
+test('migra sessões antigas e impede associação nos tipos de descanso', () => {
+  const sessaoAntiga = new PomodoroTimer({
+    session: {
+      status: 'idle',
+      durationMs: 10_000,
+      remainingMs: 10_000,
+    },
+  });
+  assert.equal(sessaoAntiga.obterEstado().type, 'focus');
+  assert.equal(sessaoAntiga.obterEstado().taskId, null);
+
+  for (const type of ['shortBreak', 'longBreak']) {
+    const descanso = new PomodoroTimer({
+      session: {
+        type,
+        taskId: 'tarefa-1',
+        status: 'idle',
+        durationMs: 5000,
+        remainingMs: 5000,
+      },
+    });
+
+    assert.equal(descanso.obterEstado().type, type);
+    assert.equal(descanso.obterEstado().taskId, null);
+    assert.equal(descanso.associarTarefa('tarefa-2'), false);
+    assert.equal(descanso.desassociarTarefa(), false);
+    descanso.reiniciar();
+    assert.equal(descanso.obterEstado().type, type);
+    assert.equal(descanso.obterEstado().taskId, null);
+  }
+});
+
+test('descarta tipo de sessão inválido e tarefa inválida persistidos', () => {
+  const tipoInvalido = new PomodoroTimer({
+    session: {
+      type: 'other',
+      taskId: 'tarefa-1',
+      status: 'idle',
+      durationMs: 10_000,
+      remainingMs: 10_000,
+    },
+  });
+  assert.equal(tipoInvalido.obterEstado().type, 'focus');
+  assert.equal(tipoInvalido.obterEstado().taskId, null);
+
+  const tarefaInvalida = new PomodoroTimer({
+    session: {
+      type: 'focus',
+      taskId: '  ',
+      status: 'idle',
+      durationMs: 10_000,
+      remainingMs: 10_000,
+    },
+  });
+  assert.equal(tarefaInvalida.obterEstado().taskId, null);
+});
+
+test('persiste e recupera sessão focus com tarefa associada', () => {
+  const dados = new Map();
+  const armazenamento = {
+    getItem: (chave) => dados.get(chave) ?? null,
+    setItem: (chave, valor) => dados.set(chave, valor),
+  };
+  const focusStore = new FocusStore(armazenamento);
+  const timer = new PomodoroTimer();
+
+  assert.equal(timer.associarTarefa('tarefa-1'), true);
+  focusStore.salvar(timer.obterEstado());
+
+  const recuperado = new PomodoroTimer({ session: focusStore.carregar() });
+  assert.deepEqual(recuperado.obterEstado(), {
+    type: 'focus',
+    taskId: 'tarefa-1',
+    status: 'idle',
+    durationMs: DURACAO_PADRAO_MS,
+    remainingMs: DURACAO_PADRAO_MS,
+    endsAt: null,
+    completedAt: null,
+  });
 });
