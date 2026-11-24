@@ -11,6 +11,10 @@ if (sessaoRecuperada !== sessaoPersistida) {
   focusStore.salvar(sessaoRecuperada);
 }
 const pomodoro = new PomodoroTimer({ session: sessaoRecuperada });
+const estadoInicialFoco = pomodoro.obterEstado();
+if (JSON.stringify(estadoInicialFoco) !== JSON.stringify(sessaoPersistida)) {
+  focusStore.salvar(estadoInicialFoco);
+}
 const form = document.querySelector('#todo-form');
 const input = document.querySelector('#todo-input');
 const list = document.querySelector('#todo-list');
@@ -19,17 +23,26 @@ const filters = document.querySelector('#todo-filters');
 const toggleAll = document.querySelector('#toggle-all');
 const pendingCount = document.querySelector('#pending-count');
 const focusTimer = document.querySelector('#focus-timer');
+const focusType = document.querySelector('#focus-type');
 const focusStatus = document.querySelector('#focus-status');
 const focusTaskSelect = document.querySelector('#focus-task-select');
 const focusMessage = document.querySelector('#focus-message');
+const focusCount = document.querySelector('#focus-count');
 const focusStart = document.querySelector('#focus-start');
 const focusPause = document.querySelector('#focus-pause');
 const focusResume = document.querySelector('#focus-resume');
 const focusReset = document.querySelector('#focus-reset');
 const clearCompleted = document.querySelector('#clear-completed');
+const focusNext = document.querySelector('#focus-next');
+
+const rotulosTipoFoco = {
+  focus: 'Foco',
+  shortBreak: 'Pausa curta',
+  longBreak: 'Pausa longa',
+};
 
 const rotulosEstadoFoco = {
-  idle: 'Pronto para focar',
+  idle: 'Pronto para iniciar',
   running: 'Sessão em andamento',
   paused: 'Sessão pausada',
   completed: 'Sessão finalizada',
@@ -48,11 +61,18 @@ function renderizarFoco() {
   const sessao = pomodoro.obterEstado();
   focusTimer.textContent = formatarTempo(sessao.remainingMs);
   focusTimer.setAttribute('aria-label', `Tempo restante: ${focusTimer.textContent}`);
-  focusStatus.textContent = rotulosEstadoFoco[sessao.status];
+  focusType.textContent = rotulosTipoFoco[sessao.type];
+  focusStatus.textContent = sessao.status === 'completed'
+    ? `${rotulosEstadoFoco.completed} · ${rotulosTipoFoco[sessao.nextType]} disponível`
+    : sessao.status === 'idle'
+      ? `${rotulosTipoFoco[sessao.type]} disponível`
+      : rotulosEstadoFoco[sessao.status];
+  focusCount.textContent = `Focos concluídos: ${sessao.focusSessionsCompleted}`;
   focusTaskSelect.disabled = sessao.type !== 'focus' || sessao.status !== 'idle';
   focusStart.disabled = sessao.status !== 'idle';
   focusPause.disabled = sessao.status !== 'running';
   focusResume.disabled = sessao.status !== 'paused';
+  focusNext.disabled = sessao.status !== 'completed' || !sessao.nextType;
 
   if (sessao.status === 'completed' && estadoFocoAnterior !== 'completed') {
     focusStore.salvar(sessao);
@@ -109,6 +129,7 @@ focusStart.addEventListener('click', () => executarAcaoFoco('iniciar'));
 focusPause.addEventListener('click', () => executarAcaoFoco('pausar'));
 focusResume.addEventListener('click', () => executarAcaoFoco('retomar'));
 focusReset.addEventListener('click', () => executarAcaoFoco('reiniciar'));
+focusNext.addEventListener('click', () => executarAcaoFoco('iniciarProximaEtapa'));
 focusTaskSelect.addEventListener('change', () => {
   const taskId = focusTaskSelect.value;
   const sessao = pomodoro.obterEstado();
