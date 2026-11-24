@@ -5,12 +5,18 @@ import { PomodoroTimer } from './pomodoro.js';
 
 const store = new TodoStore();
 const focusStore = new FocusStore();
+function validarTarefa(taskId) {
+  return store.estaDisponivel(taskId);
+}
 const sessaoPersistida = focusStore.carregar();
 const sessaoRecuperada = limparTarefaInexistente(sessaoPersistida, store.listar());
 if (sessaoRecuperada !== sessaoPersistida) {
   focusStore.salvar(sessaoRecuperada);
 }
-const pomodoro = new PomodoroTimer({ session: sessaoRecuperada });
+const pomodoro = new PomodoroTimer({
+  session: sessaoRecuperada,
+  validarTarefa,
+});
 const estadoInicialFoco = pomodoro.obterEstado();
 if (JSON.stringify(estadoInicialFoco) !== JSON.stringify(sessaoPersistida)) {
   focusStore.salvar(estadoInicialFoco);
@@ -89,7 +95,7 @@ function atualizarOpcoesTarefas(tarefas) {
   semTarefa.textContent = 'Sem tarefa';
   focusTaskSelect.append(semTarefa);
 
-  for (const tarefa of tarefas) {
+  for (const tarefa of tarefas.filter((item) => validarTarefa(item.id))) {
     const option = document.createElement('option');
     option.value = tarefa.id;
     option.textContent = tarefa.titulo;
@@ -119,8 +125,21 @@ function desassociarTarefaAntesDeRemover(taskId) {
 }
 
 function executarAcaoFoco(acao) {
-  if (pomodoro[acao]()) {
+  const sucesso = pomodoro[acao]();
+  if (sucesso) {
     focusStore.salvar(pomodoro.obterEstado());
+    if (acao === 'iniciar') {
+      mostrarMensagemFoco('');
+    }
+  } else if (acao === 'iniciar') {
+    const sessao = pomodoro.obterEstado();
+    if (
+      sessao.type === 'focus'
+      && sessao.status === 'idle'
+      && !validarTarefa(sessao.taskId)
+    ) {
+      mostrarMensagemFoco('Selecione uma tarefa pendente para iniciar o foco.');
+    }
   }
   renderizarFoco();
 }
@@ -139,7 +158,7 @@ focusTaskSelect.addEventListener('change', () => {
     mostrarMensagemFoco('A tarefa só pode ser alterada em uma sessão de foco parada.');
   } else if (taskId.length === 0) {
     associacaoAtualizada = pomodoro.desassociarTarefa();
-  } else if (store.listar().some((tarefa) => tarefa.id === taskId)) {
+  } else if (validarTarefa(taskId)) {
     associacaoAtualizada = pomodoro.associarTarefa(taskId);
   } else {
     mostrarMensagemFoco('A tarefa selecionada não existe mais.');

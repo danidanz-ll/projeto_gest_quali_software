@@ -55,6 +55,16 @@ export class TodoStore {
     return [...this.tarefas];
   }
 
+  obterPorId(id) {
+    if (typeof id !== 'string' || id.length === 0) return null;
+    return this.tarefas.find((tarefa) => tarefa.id === id) ?? null;
+  }
+
+  estaDisponivel(id) {
+    const tarefa = this.obterPorId(id);
+    return tarefa !== null && tarefa.concluida !== true;
+  }
+
   adicionar(titulo) {
     if (typeof titulo !== 'string' || titulo.trim().length === 0) return null;
     const tarefa = criarTarefa(titulo);

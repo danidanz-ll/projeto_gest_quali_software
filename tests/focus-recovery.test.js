@@ -14,7 +14,7 @@ function criarFocusStore() {
   return new FocusStore(armazenamento);
 }
 
-test('limpa e persiste referências inválidas preservando idle, running e paused', () => {
+test('preserva referências em running, paused e completed e limpa idle', () => {
   const cenarios = [
     {
       status: 'idle',
@@ -37,6 +37,14 @@ test('limpa e persiste referências inválidas preservando idle, running e pause
       endsAt: null,
       completedAt: null,
     },
+    {
+      status: 'completed',
+      durationMs: 10_000,
+      remainingMs: 0,
+      endsAt: null,
+      completedAt: 7000,
+      nextType: 'shortBreak',
+    },
   ];
 
   for (const dadosSessao of cenarios) {
@@ -49,7 +57,10 @@ test('limpa e persiste referências inválidas preservando idle, running e pause
 
     focusStore.salvar(session);
     const recuperada = limparTarefaInexistente(focusStore.carregar(), []);
-    assert.deepEqual(recuperada, { ...session, taskId: null });
+    const esperada = dadosSessao.status === 'idle'
+      ? { ...session, taskId: null }
+      : session;
+    assert.deepEqual(recuperada, esperada);
     focusStore.salvar(recuperada);
 
     const timer = new PomodoroTimer({
@@ -60,10 +71,15 @@ test('limpa e persiste referências inválidas preservando idle, running e pause
 
     assert.equal(estado.status, session.status);
     assert.equal(estado.type, 'focus');
-    assert.equal(estado.taskId, null);
+    assert.equal(
+      estado.taskId,
+      dadosSessao.status === 'idle' ? null : 'tarefa-removida',
+    );
     assert.equal(estado.durationMs, session.durationMs);
-    assert.equal(estado.remainingMs, session.remainingMs);
-    assert.deepEqual(focusStore.carregar(), { ...session, taskId: null });
+    assert.equal(estado.remainingMs, dadosSessao.status === 'running'
+      ? 7000
+      : session.remainingMs);
+    assert.deepEqual(focusStore.carregar(), esperada);
   }
 });
 

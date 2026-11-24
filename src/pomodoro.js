@@ -122,11 +122,15 @@ function normalizarSessao(session, clock) {
 }
 
 export class PomodoroTimer {
-  constructor({ clock = Date.now, session = null } = {}) {
+  constructor({ clock = Date.now, session = null, validarTarefa = () => false } = {}) {
     if (typeof clock !== 'function') {
       throw new TypeError('A fonte de tempo deve ser uma função.');
     }
+    if (typeof validarTarefa !== 'function') {
+      throw new TypeError('O validador de tarefa deve ser uma função.');
+    }
     this.clock = clock;
+    this.validarTarefa = validarTarefa;
     this.session = normalizarSessao(session, this.clock);
   }
 
@@ -155,6 +159,15 @@ export class PomodoroTimer {
 
   iniciar() {
     if (this.obterEstado().status !== 'idle') return false;
+    if (this.session.type === 'focus') {
+      if (
+        typeof this.session.taskId !== 'string'
+        || this.session.taskId.trim().length === 0
+        || this.validarTarefa(this.session.taskId) !== true
+      ) {
+        return false;
+      }
+    }
     this.session = {
       ...this.session,
       status: 'running',
@@ -170,6 +183,10 @@ export class PomodoroTimer {
     if (current.status !== 'completed' || !TIPOS_SESSAO.has(current.nextType)) return false;
 
     const next = criarSessaoParada(current.nextType, current.focusSessionsCompleted);
+    if (next.type === 'focus') {
+      this.session = next;
+      return true;
+    }
     this.session = {
       ...next,
       status: 'running',
@@ -219,6 +236,7 @@ export class PomodoroTimer {
       || this.obterEstado().status !== 'idle'
       || typeof taskId !== 'string'
       || taskId.trim().length === 0
+      || this.validarTarefa(taskId) !== true
     ) {
       return false;
     }
