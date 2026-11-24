@@ -26,6 +26,12 @@
         </div>
         <p id="focus-type" class="focus-type">Foco</p>
         <p id="focus-timer" class="focus-timer" role="timer" aria-label="Tempo restante">25:00</p>
+        <div class="focus-task">
+          <label for="focus-task-select">Tarefa da sessão</label>
+          <select id="focus-task-select" name="taskId">
+            <option value="">Sem tarefa</option>
+          </select>
+        </div>
         <p id="focus-count" class="focus-count" aria-live="polite">Focos concluídos: 0</p>
         <div class="focus-controls" aria-label="Controles do cronômetro">
           <button id="focus-start" type="button">Iniciar</button>
@@ -34,6 +40,8 @@
           <button id="focus-reset" type="button">Reiniciar</button>
           <button id="focus-next" type="button" disabled>Iniciar próxima etapa</button>
         </div>
+        <p id="focus-message" class="focus-message" role="alert" hidden></p>
+        <p id="focus-message" class="focus-message" role="alert" hidden></p>
       </section>
 
       <section class="workbench" aria-labelledby="todo-title">
@@ -56,6 +64,7 @@
 
         <div class="bulk-actions">
           <button id="toggle-all" type="button" disabled>Concluir todas</button>
+          <button id="clear-completed" type="button" disabled>Limpar concluídas</button>
         </div>
 
         <nav id="todo-filters" class="todo-filters" aria-label="Filtrar tarefas">
