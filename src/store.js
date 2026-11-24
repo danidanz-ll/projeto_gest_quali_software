@@ -80,6 +80,29 @@ export class TodoStore {
     this.salvar();
   }
 
+  concluir(id) {
+    const tarefa = this.obterPorId(id);
+    if (!tarefa) return { status: 'not-found' };
+    if (tarefa.concluida === true) return { status: 'already-completed' };
+    if (!this.armazenamento) {
+      return {
+        status: 'failed',
+        error: new Error('O armazenamento de tarefas não está disponível.'),
+      };
+    }
+
+    const concluidaAnterior = tarefa.concluida;
+    tarefa.concluida = true;
+    try {
+      this.salvar();
+    } catch (error) {
+      tarefa.concluida = concluidaAnterior;
+      return { status: 'failed', error };
+    }
+
+    return { status: 'completed' };
+  }
+
   alternarTodas() {
     if (this.tarefas.length === 0) return;
 

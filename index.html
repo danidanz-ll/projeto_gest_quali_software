@@ -31,6 +31,7 @@
           <select id="focus-task-select" name="taskId">
             <option value="">Sem tarefa</option>
           </select>
+          <p id="focus-task-associated" class="focus-task__associated">Nenhuma tarefa associada.</p>
         </div>
         <p id="focus-count" class="focus-count" aria-live="polite">Focos concluídos: 0</p>
         <div class="focus-controls" aria-label="Controles do cronômetro">
@@ -39,7 +40,9 @@
           <button id="focus-resume" type="button" disabled>Retomar</button>
           <button id="focus-reset" type="button">Reiniciar</button>
           <button id="focus-next" type="button" disabled>Iniciar próxima etapa</button>
+          <button id="focus-task-complete" type="button" hidden>Concluir tarefa associada</button>
         </div>
+        <p id="focus-task-completion-message" class="focus-message" role="status" aria-live="polite" hidden></p>
         <p id="focus-message" class="focus-message" role="alert" hidden></p>
         <p id="focus-message" class="focus-message" role="alert" hidden></p>
       </section>

@@ -40,6 +40,9 @@ const focusResume = document.querySelector('#focus-resume');
 const focusReset = document.querySelector('#focus-reset');
 const clearCompleted = document.querySelector('#clear-completed');
 const focusNext = document.querySelector('#focus-next');
+const focusTaskAssociated = document.querySelector('#focus-task-associated');
+const focusTaskComplete = document.querySelector('#focus-task-complete');
+const focusTaskCompletionMessage = document.querySelector('#focus-task-completion-message');
 
 const rotulosTipoFoco = {
   focus: 'Foco',
@@ -65,6 +68,9 @@ function formatarTempo(ms) {
 
 function renderizarFoco() {
   const sessao = pomodoro.obterEstado();
+  const tarefaAssociada = sessao.type === 'focus' && sessao.taskId
+    ? store.obterPorId(sessao.taskId)
+    : null;
   focusTimer.textContent = formatarTempo(sessao.remainingMs);
   focusTimer.setAttribute('aria-label', `Tempo restante: ${focusTimer.textContent}`);
   focusType.textContent = rotulosTipoFoco[sessao.type];
@@ -79,6 +85,19 @@ function renderizarFoco() {
   focusPause.disabled = sessao.status !== 'running';
   focusResume.disabled = sessao.status !== 'paused';
   focusNext.disabled = sessao.status !== 'completed' || !sessao.nextType;
+  focusTaskAssociated.textContent = sessao.taskId
+    ? tarefaAssociada
+      ? `${tarefaAssociada.titulo} · ${tarefaAssociada.concluida ? 'Concluída' : 'Pendente'}`
+      : `Tarefa não encontrada · ${sessao.taskId}`
+    : 'Nenhuma tarefa associada.';
+  const estadoPermiteConclusao = ['running', 'paused', 'completed']
+    .includes(sessao.status);
+  const podeConcluirTarefa = sessao.type === 'focus'
+    && estadoPermiteConclusao
+    && tarefaAssociada
+    && !tarefaAssociada.concluida;
+  focusTaskComplete.hidden = !podeConcluirTarefa;
+  focusTaskComplete.disabled = !podeConcluirTarefa;
 
   if (sessao.status === 'completed' && estadoFocoAnterior !== 'completed') {
     focusStore.salvar(sessao);
@@ -108,6 +127,51 @@ function atualizarOpcoesTarefas(tarefas) {
 function mostrarMensagemFoco(mensagem) {
   focusMessage.textContent = mensagem;
   focusMessage.hidden = mensagem.length === 0;
+}
+
+function mostrarMensagemConclusao(mensagem) {
+  focusTaskCompletionMessage.textContent = mensagem;
+  focusTaskCompletionMessage.hidden = mensagem.length === 0;
+}
+
+function concluirTarefaAssociada() {
+  const sessao = pomodoro.obterEstado();
+  if (
+    sessao.type !== 'focus'
+    || !['running', 'paused', 'completed'].includes(sessao.status)
+    || !sessao.taskId
+  ) {
+    return;
+  }
+
+  const tarefa = store.obterPorId(sessao.taskId);
+  if (!tarefa) {
+    mostrarMensagemConclusao('A tarefa associada não foi encontrada; não foi possível concluí-la.');
+    renderizarFoco();
+    return;
+  }
+  if (tarefa.concluida) {
+    mostrarMensagemConclusao('A tarefa associada já está concluída.');
+    renderizarFoco();
+    return;
+  }
+
+  if (!window.confirm(`Confirma a conclusão da tarefa "${tarefa.titulo}"?`)) return;
+
+  const resultado = store.concluir(sessao.taskId);
+  if (resultado.status === 'completed') {
+    mostrarMensagemConclusao('Tarefa concluída.');
+  } else if (resultado.status === 'already-completed') {
+    mostrarMensagemConclusao('A tarefa associada já está concluída.');
+  } else if (resultado.status === 'not-found') {
+    mostrarMensagemConclusao('A tarefa associada não foi encontrada; não foi possível concluí-la.');
+  } else {
+    console.error('Não foi possível persistir a conclusão da tarefa.', resultado.error);
+    mostrarMensagemConclusao('Não foi possível salvar a conclusão da tarefa. Tente novamente.');
+  }
+
+  render();
+  renderizarFoco();
 }
 
 function desassociarTarefaAntesDeRemover(taskId) {
@@ -149,6 +213,7 @@ focusPause.addEventListener('click', () => executarAcaoFoco('pausar'));
 focusResume.addEventListener('click', () => executarAcaoFoco('retomar'));
 focusReset.addEventListener('click', () => executarAcaoFoco('reiniciar'));
 focusNext.addEventListener('click', () => executarAcaoFoco('iniciarProximaEtapa'));
+focusTaskComplete.addEventListener('click', concluirTarefaAssociada);
 focusTaskSelect.addEventListener('change', () => {
   const taskId = focusTaskSelect.value;
   const sessao = pomodoro.obterEstado();
@@ -221,6 +286,7 @@ function render() {
     checkbox.addEventListener('change', () => {
       store.alternar(tarefa.id);
       render();
+      renderizarFoco();
     });
 
     const title = document.createElement('span');
@@ -311,6 +377,7 @@ window.addEventListener('hashchange', render);
 toggleAll.addEventListener('click', () => {
   store.alternarTodas();
   render();
+  renderizarFoco();
 });
 
 clearCompleted.addEventListener('click', () => {

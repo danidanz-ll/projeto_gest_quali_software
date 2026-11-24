@@ -50,3 +50,60 @@ test('Cenário 3 - remoção de tarefas concluídas continua funcionando', () =>
   assert.equal(store.listar().length, 2);
   assert.equal(store.listar().every((tarefa) => !tarefa.concluida), true);
 });
+
+test('conclui tarefa pendente e persiste sem repetir a gravação', () => {
+  let dados = JSON.stringify([
+    { id: '1', titulo: 'Concluir', concluida: false },
+  ]);
+  let gravacoes = 0;
+  const armazenamento = {
+    getItem: () => dados,
+    setItem: (_, valor) => {
+      dados = valor;
+      gravacoes += 1;
+    },
+  };
+  const store = new TodoStore(armazenamento);
+
+  assert.deepEqual(store.concluir('1'), { status: 'completed' });
+  assert.equal(store.listar()[0].concluida, true);
+  assert.equal(JSON.parse(dados)[0].concluida, true);
+  assert.equal(gravacoes, 1);
+
+  assert.deepEqual(store.concluir('1'), { status: 'already-completed' });
+  assert.equal(gravacoes, 1);
+});
+
+test('retorna falha para tarefa inexistente sem alterar ou persistir', () => {
+  let gravacoes = 0;
+  const armazenamento = {
+    getItem: () => JSON.stringify([]),
+    setItem: () => {
+      gravacoes += 1;
+    },
+  };
+  const store = new TodoStore(armazenamento);
+
+  assert.deepEqual(store.concluir('ausente'), { status: 'not-found' });
+  assert.equal(gravacoes, 0);
+});
+
+test('reverte o estado em memória quando a persistência falha', () => {
+  const dados = JSON.stringify([
+    { id: '1', titulo: 'Concluir', concluida: false },
+  ]);
+  const armazenamento = {
+    getItem: () => dados,
+    setItem: () => {
+      throw new Error('Falha simulada de armazenamento.');
+    },
+  };
+  const store = new TodoStore(armazenamento);
+
+  const resultado = store.concluir('1');
+
+  assert.equal(resultado.status, 'failed');
+  assert.match(resultado.error.message, /falha simulada/i);
+  assert.equal(store.listar()[0].concluida, false);
+  assert.equal(JSON.parse(dados)[0].concluida, false);
+});
