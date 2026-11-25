@@ -25,7 +25,7 @@
           <p id="focus-status" class="focus-status" role="status">Pronto para focar</p>
         </div>
         <p id="focus-type" class="focus-type">Foco</p>
-        <p id="focus-timer" class="focus-timer" role="timer" aria-label="Tempo restante">25:00</p>
+        <p id="focus-timer" class="focus-timer" role="timer" aria-label="Tempo restante" tabindex="-1">25:00</p>
         <div class="focus-task">
           <label for="focus-task-select">Tarefa da sessão</label>
           <select id="focus-task-select" name="taskId">
@@ -46,6 +46,17 @@
         <p id="focus-message" class="focus-message" role="alert" hidden></p>
         <p id="focus-message" class="focus-message" role="alert" hidden></p>
       </section>
+
+      <div id="task-celebration" class="celebration" role="dialog" aria-modal="true" aria-labelledby="celebration-title" aria-describedby="celebration-message celebration-task" hidden tabindex="-1">
+        <section class="celebration__card">
+          <span class="celebration__spark" aria-hidden="true">✦</span>
+          <p class="label">Conquista reconhecida</p>
+          <h2 id="celebration-title">Tarefa concluída</h2>
+          <p id="celebration-message" class="celebration__message">Parabéns! Mais um passo concluído com sucesso.</p>
+          <p id="celebration-task" class="celebration__task"></p>
+          <button id="celebration-continue" type="button">Continuar</button>
+        </section>
+      </div>
 
       <section class="workbench" aria-labelledby="todo-title">
         <div class="workbench__top">

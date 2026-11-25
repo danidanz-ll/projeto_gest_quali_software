@@ -33,7 +33,9 @@ function criarElemento() {
     querySelectorAll() {
       return [];
     },
-    focus() {},
+    focus() {
+      if (globalThis.document) globalThis.document.activeElement = this;
+    },
     select() {},
   };
 }
@@ -90,6 +92,9 @@ async function prepararApp(context, { tarefas = [], sessao = null, confirmar = t
     'focus-task-associated',
     'focus-task-complete',
     'focus-task-completion-message',
+    'task-celebration',
+    'celebration-task',
+    'celebration-continue',
     'focus-message',
     'focus-count',
     'focus-start',
@@ -102,6 +107,7 @@ async function prepararApp(context, { tarefas = [], sessao = null, confirmar = t
   const elementos = new Map(ids.map((id) => [id, criarElemento()]));
   elementos.get('focus-task-complete').hidden = true;
   elementos.get('focus-task-completion-message').hidden = true;
+  elementos.get('task-celebration').hidden = true;
   elementos.get('focus-message').hidden = true;
   const links = ['#/', '#/active', '#/completed'].map((hash) => ({
     hash,
@@ -114,7 +120,11 @@ async function prepararApp(context, { tarefas = [], sessao = null, confirmar = t
     querySelector: (seletor) => elementos.get(seletor.slice(1)),
     createElement: () => criarElemento(),
     addEventListener() {},
+    activeElement: null,
   };
+  elementos.get('task-celebration').querySelectorAll = () => [
+    elementos.get('celebration-continue'),
+  ];
   const confirmacoes = [];
   globalThis.window = {
     location: { hash: '#/' },
@@ -228,10 +238,17 @@ for (const status of ['running', 'paused', 'completed']) {
     assert.match(tarefaAssociada.textContent, /Preparar revisão · Concluída/);
     assert.equal(acaoConcluir.hidden, true);
     assert.equal(mensagem.textContent, 'Tarefa concluída.');
+    assert.equal(elementos.get('task-celebration').hidden, false);
+    assert.equal(elementos.get('celebration-task').textContent, 'Preparar revisão');
+    assert.equal(elementos.get('celebration-continue').disabled, false);
 
     const writesAfterFirstClick = gravacoes.get('todolab:tarefas');
     acaoConcluir.dispatch('click');
     assert.equal(gravacoes.get('todolab:tarefas'), writesAfterFirstClick);
+    assert.equal(elementos.get('task-celebration').hidden, false);
+    elementos.get('celebration-continue').dispatch('click');
+    acaoConcluir.dispatch('click');
+    assert.equal(elementos.get('task-celebration').hidden, true);
   });
 }
 
@@ -252,6 +269,7 @@ test('cancelar confirmação não altera tarefa, sessão ou cronômetro', async 
   acaoConcluir.dispatch('click');
 
   assert.equal(elementos.get('focus-task-completion-message').hidden, true);
+  assert.equal(elementos.get('task-celebration').hidden, true);
   assert.equal(dados.get('todolab:tarefas'), tarefaAntes);
   assert.equal(dados.get('todolab:pomodoro'), sessaoAntes);
   assert.equal(timer.textContent, timerAntes);
@@ -280,6 +298,7 @@ test('falha de persistência não mostra sucesso nem muda o timer', async (conte
     elementos.get('focus-task-completion-message').textContent,
     /não foi possível salvar/i,
   );
+  assert.equal(elementos.get('task-celebration').hidden, true);
 });
 
 test('tarefa já concluída permanece identificada e não oferece outra conclusão', async (context) => {
@@ -291,6 +310,7 @@ test('tarefa já concluída permanece identificada e não oferece outra conclus�
 
   assert.match(elementos.get('focus-task-associated').textContent, /Preparar revisão · Concluída/);
   assert.equal(elementos.get('focus-task-complete').hidden, true);
+  assert.equal(elementos.get('task-celebration').hidden, true);
   assert.equal(confirmacoes.length, 0);
 });
 
@@ -310,4 +330,66 @@ test('tick e renderização não concluem automaticamente a tarefa', async (cont
   assert.equal(elementos.get('focus-status').textContent, 'Sessão finalizada · Pausa curta disponível');
   assert.equal(JSON.parse(dados.get('todolab:tarefas'))[0].concluida, false);
   assert.equal(elementos.get('focus-task-complete').hidden, false);
+});
+
+test('continuar durante o foco preserva a sessão e considera o tempo da comemoração', async (context) => {
+  const app = await prepararApp(context, {
+    tarefas: [criarTarefa()],
+    sessao: criarSessao('running'),
+  });
+  const { elementos, dados, intervalos, definirAgora } = app;
+  const acaoConcluir = elementos.get('focus-task-complete');
+
+  globalThis.document.activeElement = acaoConcluir;
+  acaoConcluir.dispatch('click');
+  assert.equal(elementos.get('task-celebration').hidden, false);
+  assert.equal(globalThis.document.activeElement, elementos.get('celebration-continue'));
+
+  definirAgora(6000);
+  intervalos[0]();
+  assert.equal(elementos.get('focus-timer').textContent, '00:55');
+  assert.equal(elementos.get('task-celebration').hidden, false);
+
+  elementos.get('celebration-continue').dispatch('click');
+  assert.equal(elementos.get('task-celebration').hidden, true);
+  assert.equal(globalThis.document.activeElement, elementos.get('focus-timer'));
+  assert.equal(elementos.get('focus-timer').textContent, '00:55');
+  assert.equal(elementos.get('focus-status').textContent, 'Sessão em andamento');
+  assert.equal(JSON.parse(dados.get('todolab:pomodoro')).endsAt, 61_000);
+});
+
+test('Escape encerra a comemoração e retorna ao estado concluído do Pomodoro', async (context) => {
+  const app = await prepararApp(context, {
+    tarefas: [criarTarefa()],
+    sessao: criarSessao('completed'),
+  });
+  const { elementos } = app;
+  elementos.get('focus-task-complete').dispatch('click');
+
+  elementos.get('task-celebration').dispatch('keydown', {
+    key: 'Escape',
+    preventDefault() {},
+  });
+
+  assert.equal(elementos.get('task-celebration').hidden, true);
+  assert.equal(elementos.get('focus-status').textContent, 'Sessão finalizada · Pausa curta disponível');
+  assert.equal(elementos.get('focus-next').disabled, false);
+});
+
+test('a navegação por Tab permanece dentro da comemoração', async (context) => {
+  const app = await prepararApp(context, {
+    tarefas: [criarTarefa()],
+    sessao: criarSessao('paused'),
+  });
+  const { elementos } = app;
+  elementos.get('focus-task-complete').dispatch('click');
+  let preveniuPadrao = false;
+
+  elementos.get('task-celebration').dispatch('keydown', {
+    key: 'Tab',
+    preventDefault() { preveniuPadrao = true; },
+  });
+
+  assert.equal(preveniuPadrao, true);
+  assert.equal(globalThis.document.activeElement, elementos.get('celebration-continue'));
 });

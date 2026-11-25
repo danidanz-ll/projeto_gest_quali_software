@@ -2,6 +2,7 @@ import { filtrarTarefas, formatarPendencias, TodoStore } from './store.js';
 import { FocusStore } from './focus-store.js';
 import { limparTarefaInexistente } from './focus-session.js';
 import { PomodoroTimer } from './pomodoro.js';
+import { TaskCelebration } from './task-celebration.js';
 
 const store = new TodoStore();
 const focusStore = new FocusStore();
@@ -43,6 +44,13 @@ const focusNext = document.querySelector('#focus-next');
 const focusTaskAssociated = document.querySelector('#focus-task-associated');
 const focusTaskComplete = document.querySelector('#focus-task-complete');
 const focusTaskCompletionMessage = document.querySelector('#focus-task-completion-message');
+const celebration = new TaskCelebration({
+  dialog: document.querySelector('#task-celebration'),
+  title: document.querySelector('#celebration-task'),
+  continueButton: document.querySelector('#celebration-continue'),
+  fallbackFocus: focusTimer,
+  onClose: renderizarFoco,
+});
 
 const rotulosTipoFoco = {
   focus: 'Foco',
@@ -159,8 +167,10 @@ function concluirTarefaAssociada() {
   if (!window.confirm(`Confirma a conclusão da tarefa "${tarefa.titulo}"?`)) return;
 
   const resultado = store.concluir(sessao.taskId);
+  let tarefaConcluida = false;
   if (resultado.status === 'completed') {
     mostrarMensagemConclusao('Tarefa concluída.');
+    tarefaConcluida = true;
   } else if (resultado.status === 'already-completed') {
     mostrarMensagemConclusao('A tarefa associada já está concluída.');
   } else if (resultado.status === 'not-found') {
@@ -172,6 +182,7 @@ function concluirTarefaAssociada() {
 
   render();
   renderizarFoco();
+  if (tarefaConcluida) celebration.show(tarefa.titulo);
 }
 
 function desassociarTarefaAntesDeRemover(taskId) {
