@@ -283,7 +283,7 @@ this.session = {
 };
     return true;
   }
-  
+
   registrarConclusaoTarefa(concluidaEm = new Date().toISOString()) {
   if (
     this.session.type !== 'focus'
