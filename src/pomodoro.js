@@ -9,7 +9,9 @@ export const DURACOES_SESSAO_MS = Object.freeze({
 const TIPOS_SESSAO = new Set(Object.keys(DURACOES_SESSAO_MS));
 const ESTADOS_VALIDOS = new Set(['idle', 'running', 'paused', 'completed']);
 const FOCOS_PARA_PAUSA_LONGA = 4;
-
+function gerarSessionId() {
+  return globalThis.crypto.randomUUID();
+}
 function proximaEtapa(tipo, focosConcluidos) {
   if (tipo !== 'focus') return 'focus';
   return focosConcluidos % FOCOS_PARA_PAUSA_LONGA === 0 ? 'longBreak' : 'shortBreak';
@@ -29,6 +31,10 @@ function criarSessaoParada(
     remainingMs: durationMs,
     endsAt: null,
     completedAt: null,
+    sessionId: null,
+    taskTitle: null,
+    startedAt: null,
+    actualDurationMs: null,
     focusSessionsCompleted: focosConcluidos,
     nextType: null,
   };
@@ -47,12 +53,29 @@ function obterTaskId(session, tipo) {
     ? session.taskId
     : null;
 }
+function obterMetadadosSessao(session) {
+  return {
+    sessionId: typeof session.sessionId === 'string'
+      ? session.sessionId
+      : null,
+    taskTitle: typeof session.taskTitle === 'string'
+      ? session.taskTitle
+      : null,
+    startedAt: Number.isFinite(session.startedAt)
+      ? session.startedAt
+      : null,
+    actualDurationMs: Number.isFinite(session.actualDurationMs)
+      ? session.actualDurationMs
+      : null,
+  };
+}
 
 function normalizarSessao(session, clock) {
   if (!sessaoValida(session)) return criarSessaoParada();
 
   const tipo = TIPOS_SESSAO.has(session.type) ? session.type : 'focus';
   const taskId = obterTaskId(session, tipo);
+  const metadados = obterMetadadosSessao(session);
   const durationMs = session.durationMs;
   const focusSessionsCompleted = Number.isSafeInteger(session.focusSessionsCompleted)
     && session.focusSessionsCompleted >= 0
@@ -61,6 +84,7 @@ function normalizarSessao(session, clock) {
 
   if (session.status === 'running' && Number.isFinite(session.endsAt)) {
     return {
+      ...metadados,
       status: 'running',
       type: tipo,
       taskId,
@@ -80,6 +104,7 @@ function normalizarSessao(session, clock) {
     && session.remainingMs <= durationMs
   ) {
     return {
+      ...metadados,
       status: 'paused',
       type: tipo,
       taskId,
@@ -97,6 +122,7 @@ function normalizarSessao(session, clock) {
       ? session.nextType
       : proximaEtapa(tipo, focusSessionsCompleted);
     return {
+      ...metadados,
       status: 'completed',
       type: tipo,
       taskId,
@@ -117,6 +143,7 @@ function normalizarSessao(session, clock) {
     : durationMs;
   return {
     ...criarSessaoParada(tipo, focusSessionsCompleted, durationMs, taskId),
+    ...metadados,
     remainingMs,
   };
 }
@@ -147,6 +174,7 @@ export class PomodoroTimer {
           remainingMs: 0,
           endsAt: null,
           completedAt: this.session.endsAt,
+          actualDurationMs: this.session.durationMs,
           focusSessionsCompleted,
           nextType: proximaEtapa(this.session.type, focusSessionsCompleted),
         };
@@ -168,13 +196,20 @@ export class PomodoroTimer {
         return false;
       }
     }
-    this.session = {
-      ...this.session,
-      status: 'running',
-      endsAt: this.clock() + this.session.remainingMs,
-      completedAt: null,
-      nextType: null,
-    };
+    const startedAt = this.clock();
+
+this.session = {
+  ...this.session,
+  status: 'running',
+  sessionId: this.session.type === 'focus'
+    ? (this.session.sessionId ?? gerarSessionId())
+    : null,
+  startedAt: this.session.type === 'focus' ? startedAt : null,
+  actualDurationMs: null,
+  endsAt: startedAt + this.session.remainingMs,
+  completedAt: null,
+  nextType: null,
+};
     return true;
   }
 
@@ -230,7 +265,7 @@ export class PomodoroTimer {
     return true;
   }
 
-  associarTarefa(taskId) {
+  associarTarefa(taskId, taskTitle = null) {
     if (
       this.session.type !== 'focus'
       || this.obterEstado().status !== 'idle'
@@ -240,9 +275,33 @@ export class PomodoroTimer {
     ) {
       return false;
     }
-    this.session = { ...this.session, taskId };
+    this.session = {
+      ...this.session,
+      taskId,
+      taskTitle: typeof taskTitle === 'string' ? taskTitle : null,
+      taskCompletedAt: null,
+};
     return true;
   }
+
+  registrarConclusaoTarefa(concluidaEm = new Date().toISOString()) {
+  if (
+    this.session.type !== 'focus'
+    || !this.session.taskId
+    || typeof concluidaEm !== 'string'
+    || !concluidaEm.trim()
+    || this.session.taskCompletedAt
+  ) {
+    return false;
+  }
+
+  this.session = {
+    ...this.session,
+    taskCompletedAt: concluidaEm,
+  };
+
+  return true;
+}
 
   desassociarTarefa() {
     if (this.session.type !== 'focus' || this.obterEstado().status !== 'idle') {

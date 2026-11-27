@@ -2,9 +2,12 @@ import { filtrarTarefas, formatarPendencias, TodoStore } from './store.js';
 import { FocusStore } from './focus-store.js';
 import { limparTarefaInexistente } from './focus-session.js';
 import { PomodoroTimer } from './pomodoro.js';
+import { TaskCelebration } from './task-celebration.js';
+import { FocusHistoryStore } from './focus-history.js';
 
 const store = new TodoStore();
 const focusStore = new FocusStore();
+const focusHistoryStore = new FocusHistoryStore();
 function validarTarefa(taskId) {
   return store.estaDisponivel(taskId);
 }
@@ -43,6 +46,13 @@ const focusNext = document.querySelector('#focus-next');
 const focusTaskAssociated = document.querySelector('#focus-task-associated');
 const focusTaskComplete = document.querySelector('#focus-task-complete');
 const focusTaskCompletionMessage = document.querySelector('#focus-task-completion-message');
+const celebration = new TaskCelebration({
+  dialog: document.querySelector('#task-celebration'),
+  title: document.querySelector('#celebration-task'),
+  continueButton: document.querySelector('#celebration-continue'),
+  fallbackFocus: focusTimer,
+  onClose: renderizarFoco,
+});
 
 const rotulosTipoFoco = {
   focus: 'Foco',
@@ -99,10 +109,63 @@ function renderizarFoco() {
   focusTaskComplete.hidden = !podeConcluirTarefa;
   focusTaskComplete.disabled = !podeConcluirTarefa;
 
-  if (sessao.status === 'completed' && estadoFocoAnterior !== 'completed') {
-    focusStore.salvar(sessao);
-  }
+  if (
+  sessao.type === 'focus'
+  && sessao.status === 'completed'
+  && estadoFocoAnterior !== 'completed'
+) {
+  focusStore.salvar(sessao);
+
+  focusHistoryStore.registrar({
+    sessionId: sessao.sessionId,
+    taskId: sessao.taskId,
+    taskTitle: sessao.taskTitle,
+    startedAt: sessao.startedAt,
+    completedAt: sessao.completedAt,
+    durationMs: sessao.durationMs,
+    actualDurationMs: sessao.actualDurationMs,
+    taskCompleted: Boolean(sessao.taskCompletedAt),
+    taskCompletedAt: sessao.taskCompletedAt ?? null,
+  });
+}
+
   estadoFocoAnterior = sessao.status;
+  renderizarHistorico();
+}
+
+function renderizarHistorico() {
+  if (typeof document.getElementById !== 'function') return;
+  const lista = document.getElementById('focus-history-list');
+  const mensagemVazia = document.getElementById('focus-history-empty');
+
+  if (!lista || !mensagemVazia) return;
+
+  const historico = focusHistoryStore.listar();
+  lista.replaceChildren();
+  mensagemVazia.hidden = historico.length > 0;
+
+  for (const sessao of historico) {
+    const item = document.createElement('li');
+    const titulo = document.createElement('strong');
+    const detalhes = document.createElement('p');
+
+    titulo.textContent = sessao.taskTitle || 'Sessão sem tarefa associada';
+
+    const data = sessao.completedAt
+      ? new Date(sessao.completedAt).toLocaleString('pt-BR')
+      : 'Data indisponível';
+
+    const duracaoMs = sessao.actualDurationMs ?? sessao.durationMs ?? 0;
+    const duracaoMinutos = Math.round(duracaoMs / 60000);
+    const statusTarefa = sessao.taskCompleted
+      ? 'Tarefa concluída'
+      : 'Tarefa não concluída';
+
+    detalhes.textContent = `${data} · ${duracaoMinutos} min · ${statusTarefa}`;
+
+    item.append(titulo, detalhes);
+    lista.append(item);
+  }
 }
 
 function atualizarOpcoesTarefas(tarefas) {
@@ -134,6 +197,7 @@ function mostrarMensagemConclusao(mensagem) {
   focusTaskCompletionMessage.hidden = mensagem.length === 0;
 }
 
+
 function concluirTarefaAssociada() {
   const sessao = pomodoro.obterEstado();
   if (
@@ -159,8 +223,21 @@ function concluirTarefaAssociada() {
   if (!window.confirm(`Confirma a conclusão da tarefa "${tarefa.titulo}"?`)) return;
 
   const resultado = store.concluir(sessao.taskId);
+  let tarefaConcluida = false;
+
   if (resultado.status === 'completed') {
     mostrarMensagemConclusao('Tarefa concluída.');
+    tarefaConcluida = true;
+
+    const taskCompletedAt = new Date().toISOString();
+
+    pomodoro.registrarConclusaoTarefa(taskCompletedAt);
+
+  focusHistoryStore.atualizarConclusaoTarefa(
+    sessao.sessionId,
+    taskCompletedAt
+);
+
   } else if (resultado.status === 'already-completed') {
     mostrarMensagemConclusao('A tarefa associada já está concluída.');
   } else if (resultado.status === 'not-found') {
@@ -172,6 +249,7 @@ function concluirTarefaAssociada() {
 
   render();
   renderizarFoco();
+  if (tarefaConcluida) celebration.show(tarefa.titulo);
 }
 
 function desassociarTarefaAntesDeRemover(taskId) {
@@ -224,7 +302,10 @@ focusTaskSelect.addEventListener('change', () => {
   } else if (taskId.length === 0) {
     associacaoAtualizada = pomodoro.desassociarTarefa();
   } else if (validarTarefa(taskId)) {
-    associacaoAtualizada = pomodoro.associarTarefa(taskId);
+    associacaoAtualizada = pomodoro.associarTarefa(
+  taskId,
+  store.obterPorId(taskId)?.titulo ?? null
+);
   } else {
     mostrarMensagemFoco('A tarefa selecionada não existe mais.');
   }
